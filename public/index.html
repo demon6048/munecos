@@ -170,7 +170,6 @@ nav a:hover::after,nav a[aria-current=page]::after{transform:scaleX(1)}
 </head>
 <body>
 <script>window.fbReady=new Promise(function(r){window.__fbRes=r})</script>
-<div class="demo">Modo demostración: los datos que envíes se guardan solo en este navegador y no llegan a nadie.</div>
 <header><div class="wrap bar">
 <a class="brand" href="#/inicio" aria-label="Los Muñecos de la Cumbia — Inicio" style="display:flex;align-items:center"><img id="hl" alt="" width="76" height="76" style="width:76px;height:76px;object-fit:contain"></a>
 <button id="mb" aria-expanded="false" aria-controls="menu">Menú</button>
@@ -189,7 +188,7 @@ nav a:hover::after,nav a[aria-current=page]::after{transform:scaleX(1)}
 
 <section class="page" id="nosotros"><div class="wrap">
 <h1>Nosotros</h1>
-<div class="card"><span class="tag">Borrador</span><h3>Historia de la orquesta</h3><p class="note">La biografía aprobada aún no ha sido cargada. Se administrará desde el panel (fase B) y no se publicará hasta su aprobación.</p></div>
+<div class="card" id="bioBox"><span class="tag">Borrador</span><h3>Historia de la orquesta</h3><p class="note">La biografía aprobada aún no ha sido cargada. Próximamente.</p></div>
 <div class="card" style="margin-top:16px"><h3>Dirección: Jhon Mersi Alvarado</h3><p class="note">Trayectoria, equipo y fotografías: pendientes de aprobación por el responsable.</p></div>
 </div></section>
 
@@ -235,9 +234,9 @@ nav a:hover::after,nav a[aria-current=page]::after{transform:scaleX(1)}
 <p class="note">Cada canal requiere su propio consentimiento y puedes darte de baja cuando quieras. Pedir una cotización no te suscribe.</p></div>
 </form></div>
 <div class="card vote" style="margin-top:16px"><h2>Elige el repertorio</h2>
-<span class="tag">Ejemplo</span>
+
 <div id="voteBox"></div>
-<p class="note">Un voto por navegador (límite de la demo). En producción se vincularía a una identidad verificada; no equivale a «una persona, un voto».</p></div>
+<p class="note">Un voto por navegador (límite del navegador). En producción se vincularía a una identidad verificada; no equivale a «una persona, un voto».</p></div>
 </div></section>
 
 <section class="page" id="testimonios"><div class="wrap">
@@ -279,7 +278,7 @@ nav a:hover::after,nav a[aria-current=page]::after{transform:scaleX(1)}
 <footer><div class="wrap">
 <div class="grid">
 <div><a href="https://wa.me/51958069844?text=Hola%2C%20quiero%20informaci%C3%B3n%20para%20contratar%20a%20Los%20Mu%C3%B1ecos%20de%20la%20Cumbia%20para%20mi%20evento." target="_blank" rel="noopener" style="font-weight:700;font-size:1.05rem;text-decoration:none">Contratos · escríbenos por WhatsApp</a><br>Teléfono: <a href="tel:+51958069844">958 069 844</a><br><a href="https://wa.me/51958069844" target="_blank" rel="noopener">WhatsApp</a></div>
-<div><b>Redes</b><br><span class="note">Aún no hay redes configuradas. Se mostrarán solo las que tengan URL válida.</span></div>
+<div><b>Redes</b><br><span id="redesBox" class="note">Aún no hay redes configuradas. Se mostrarán solo las que tengan URL válida.</span></div>
 <div><b>Legal</b><br><a href="#/contacto">Privacidad</a> (texto pendiente de aprobación)<br><a href="#/admin/login" id="adm">Administración</a></div>
 </div>
 <div id="admMsg" class="note" role="status"></div>
@@ -312,8 +311,8 @@ document.addEventListener("keydown",function(e){if(e.key==="Escape"&&menu.classL
 var tipos=["Bodas","Cumpleaños","Aniversarios","Eventos corporativos","Celebraciones","Otros eventos"];
 var formatos=[["Equipo básico","Formato reducido para espacios pequeños."],["Show completo","Presentación con orquesta completa."],["Formato personalizado","Se arma según tu evento."]];
 var incl='<p class="note">Cantidad de músicos, duración, sonido, iluminación, transporte y cobertura: por definir con administración. No se asume que todo esté incluido.</p>';
-$("#tipos").innerHTML=tipos.map(function(t){return '<div class="card"><span class="tag">Propuesto</span><h3>'+t+'</h3></div>'}).join("");
-$("#formatos").innerHTML=formatos.map(function(f){return '<div class="card"><span class="tag">Ejemplo</span><h3>'+f[0]+'</h3><p>'+f[1]+'</p>'+incl+'<a class="btn ghost" href="#/contacto" data-f="'+f[0]+'">Consultar este formato</a></div>'}).join("");
+$("#tipos").innerHTML=tipos.map(function(t){return '<div class="card"><h3>'+t+'</h3></div>'}).join("");
+$("#formatos").innerHTML=formatos.map(function(f){return '<div class="card"><h3>'+f[0]+'</h3><p>'+f[1]+'</p>'+incl+'<a class="btn ghost" href="#/contacto" data-f="'+f[0]+'">Consultar este formato</a></div>'}).join("");
 $$("[data-f]").forEach(function(a){a.addEventListener("click",function(){$("#q10").value=a.dataset.f})});
 var evs=[]; /* eventos públicos publicados: vacío hasta que administración publique */
 var vac='<b>Próximamente anunciaremos nuevas presentaciones.</b><br>Mientras tanto, cotiza tu evento.<br><br><a class="btn ghost" href="#/contacto">Cotizar mi evento</a>';
@@ -354,9 +353,9 @@ var FBON=!!(window.FIREBASE_CONFIG&&window.FIREBASE_CONFIG.apiKey);
 function done(){busy=false;$("#qBtn").disabled=false;$("#qBtn").textContent="Enviar consulta"}
 if(FBON){window.fbReady.then(function(api){if(!api)throw{code:"sin-conexion"};return api.pub("oportunidades",key,o,"nueva")}).then(function(){show($("#qMsg"),"Consulta registrada en línea. Esto no confirma una reserva ni disponibilidad; te contactaremos.","ok");q.reset();updWa();done()}).catch(function(er){console.error(er);show($("#qMsg"),"No se pudo guardar en línea ("+(er&&er.code||"error")+"). Si ya enviaste esta misma consulta, ya está registrada. También puedes escribirnos por WhatsApp.","bad");done()});return}
 setTimeout(function(){
-if(opp.some(function(x){return x.key===key}))show($("#qMsg"),"Esta consulta ya estaba registrada (no se creó otra). Total de oportunidades en la demo: "+opp.length+".","ok");
+if(opp.some(function(x){return x.key===key}))show($("#qMsg"),"El servicio en línea no está disponible ahora. Escríbenos por WhatsApp.","ok");
 else{opp.push({key:key,etapa:"Nueva consulta",creada:new Date().toISOString(),datos:o});st("demo_opps",opp);
-show($("#qMsg"),"Consulta registrada (demo). Se creó 1 oportunidad en el CRM de demostración, etapa «Nueva consulta». Esto no confirma reserva ni disponibilidad. Total en demo: "+opp.length+".","ok")}
+show($("#qMsg"),"El servicio en línea no está disponible ahora. Escríbenos por WhatsApp.","ok")}
 busy=false;$("#qBtn").disabled=false;$("#qBtn").textContent="Enviar consulta"},600)});
 
 /* Club de fans */
@@ -369,7 +368,7 @@ if(c&&!el.cm.checked){$('[data-e="form"]',fan).textContent="Marca el consentimie
 if(w&&!el.cw.checked){$('[data-e="form"]',fan).textContent="Marca el consentimiento para WhatsApp.";bad=1}
 if(bad){show($("#fanMsg"),"Revisa el formulario.","bad");return}
 var l=st("demo_fans")||[];l.push({nombre:el.nombre.value.trim(),ciudad:el.ciudad.value.trim(),correo:c,wa:w,cm:c&&el.cm.checked?new Date().toISOString():null,cw:w&&el.cw.checked?new Date().toISOString():null});st("demo_fans",l);
-show($("#fanMsg"),"Suscripción registrada (demo) con fecha de consentimiento por canal. La baja se gestionará desde un enlace en cada mensaje.","ok");fan.reset()});
+window.fbReady.then(function(api){if(!api)throw{code:"sin-conexion"};return api.pub("suscriptores",null,{nombre:el.nombre.value.trim(),ciudad:el.ciudad.value.trim(),correo:c,wa:w,cm:c&&el.cm.checked?new Date().toISOString():null,cw:w&&el.cw.checked?new Date().toISOString():null})}).then(function(){show($("#fanMsg"),"Suscripción registrada con fecha de consentimiento por canal.","ok");fan.reset()}).catch(function(er){show($("#fanMsg"),"No se pudo registrar ("+(er&&er.code||"error")+").","bad")})});
 
 /* Votación (canciones de ejemplo) */
 var songs=["Canción de ejemplo A","Canción de ejemplo B","Canción de ejemplo C"];
@@ -389,7 +388,7 @@ else if(/\d{7,}|@/.test(t)){setErr(tf,"texto","Quita teléfonos o correos del te
 if(!el.c.checked){$('[data-e="c"]',tf).textContent="Debes autorizar la publicación.";bad=1}
 if(bad){show($("#tMsg"),"Revisa el formulario.","bad");return}
 var l=st("demo_testi")||[];l.push({nombre:n,texto:t,estado:"pendiente"});st("demo_testi",l);
-show($("#tMsg"),"Enviado a revisión. No será visible hasta que administración lo apruebe.","ok");tf.reset()});
+window.fbReady.then(function(api){if(!api)throw{code:"sin-conexion"};return api.pub("testimonios",null,{nombre:n,texto:t,estado:"pendiente"})}).then(function(){show($("#tMsg"),"Enviado a revisión. No será visible hasta que administración lo apruebe.","ok");tf.reset()}).catch(function(er){show($("#tMsg"),"No se pudo enviar ("+(er&&er.code||"error")+").","bad")})});
 
 /* Acceso discreto a administración */
 
@@ -457,6 +456,12 @@ window.fbReady.then(function(api){if(!api)return;api.pubEvents(function(l){var t
 var up=l.filter(function(e){return e.fecha>=t&&ok.indexOf(e.estado)>-1}).sort(function(a,b){return a.fecha<b.fecha?-1:1});
 if(!up.length){box.className=c0;box.innerHTML=h0;return}box.className="";
 box.innerHTML='<div class="grid">'+up.map(function(e){return'<div class="card"><span class="tag">'+esc(e.estado)+'</span><h3>'+esc(e.titulo)+'</h3><p>'+e.fecha.split("-").reverse().join("/")+" · "+esc(e.ciudad)+"</p>"+(e.estado==="Cancelado"?"<p class='note'>Este evento fue cancelado.</p>":"")+"</div>"}).join("")+"</div>"},function(er){console.error(er)})})})();</script>
+<script>(function(){if(!window.fbReady)return;function esc(s){var d=document.createElement("div");d.textContent=s==null?"":s;return d.innerHTML}
+var U=/^https:\/\/[^\s"'<>]+$/;
+window.fbReady.then(function(api){if(!api)return;api.pubDoc("config","contenido",function(c){if(!c)return;
+var b=document.getElementById("bioBox");if(b&&(c.historia||c.director))b.innerHTML="<h3>Historia de la orquesta</h3>"+(c.historia?"<p>"+esc(c.historia).replace(/\n/g,"<br>")+"</p>":"")+(c.director?"<h3>Dirección</h3><p>"+esc(c.director)+"</p>":"");
+var r=document.getElementById("redesBox"),L=[["facebook","Facebook"],["instagram","Instagram"],["youtube","YouTube"],["tiktok","TikTok"]].filter(function(x){return U.test(c[x[0]]||"")});
+if(r&&L.length)r.innerHTML=L.map(function(x){return'<a href="'+esc(c[x[0]])+'" target="_blank" rel="noopener">'+x[1]+"</a>"}).join("<br>")})})})();</script>
 <div id="admin" aria-live="polite"></div>
 <dialog id="dlg"></dialog>
 <script>
@@ -486,13 +491,13 @@ exps:[{f:iso(Y,Mo,1),c:"Pago músico (Boda DEMO)",cat:"Personal",m:800}],
 staff:[{n:"Músico Ejemplo 1",rol:"Voz",tar:300,arr:"18:12"},{n:"Músico Ejemplo 2",rol:"Percusión",tar:250,arr:"17:58"},{n:"Músico Ejemplo 3",rol:"Teclado",tar:250,arr:""}],
 inv:[{cod:"INS-001",eq:"Timbales (DEMO)",ub:"Almacén",est:"Disponible"},{cod:"SON-004",eq:"Micrófono inalámbrico (DEMO)",ub:"Evento Boda DEMO",est:"Reservado"},{cod:"SON-007",eq:"Consola de sonido (DEMO)",ub:"Taller",est:"Mantenimiento"}]};
 var sess=false,tol=5,CONV="18:00",tab="Cobros";
-var API=null,unsub=[],COLL={clients:"clientes",events:"eventos",quotes:"cotizaciones",contracts:"contratos",pays:"pagos",exps:"gastos",staff:"personal",inv:"inventario"};D.opps=[];
+var API=null,unsub=[],COLL={clients:"clientes",events:"eventos",quotes:"cotizaciones",contracts:"contratos",pays:"pagos",exps:"gastos",staff:"personal",inv:"inventario",hojas:"hojas",subs:"suscriptores",testi:"testimonios"};D.opps=[];Object.keys(COLL).forEach(function(k){D[k]=[]});
 function rerender(){if(location.hash.indexOf("#/admin")!==0||dlg.open||location.hash==="#/admin/contratos/nuevo")return;var ae=document.activeElement;if(ae&&ae.tagName==="INPUT"&&A.contains(ae))return;render()}
 function lerr(e){console.error(e);toast("Error al leer datos: "+(e.code||e.message))}
 function stop(){unsub.forEach(function(f){try{f()}catch(e){}});unsub=[]}
 function start(){stop();Object.keys(COLL).forEach(function(k){unsub.push(API.listen(COLL[k],function(l){D[k]=l;rerender()},lerr))});
 unsub.push(API.listen("oportunidades",function(l){D.opps=l;rerender()},lerr));
-unsub.push(API.listen("config",function(l){var pl=l.filter(function(x){return x._id==="plantilla"})[0];if(pl&&pl.fl){try{FL=JSON.parse(pl.fl)}catch(e){}}var m=l.filter(function(x){return x._id==="modulos"})[0];if(m){["finanzas","contratos","inventario"].forEach(function(k){if(m[k]!==undefined)D.mods[k]=m[k]});rerender()}},lerr))}
+unsub.push(API.listen("config",function(l){var ct=l.filter(function(x){return x._id==="contenido"})[0];if(ct)D.contenido=ct;var pl=l.filter(function(x){return x._id==="plantilla"})[0];if(pl&&pl.fl){try{FL=JSON.parse(pl.fl)}catch(e){}}var m=l.filter(function(x){return x._id==="modulos"})[0];if(m){["finanzas","contratos","inventario"].forEach(function(k){if(m[k]!==undefined)D.mods[k]=m[k]});rerender()}},lerr))}
 function evAct(id,a){var ev=D.events.filter(function(x){return x._id===id})[0];if(!ev||!API)return;
 if(a==="pub"&&["Confirmado","Reprogramado","Cancelado"].indexOf(ev.estado)<0){toast("Confirma el evento antes de publicarlo");return}
 var d=a==="pub"?{vis:"Público"}:a==="hide"?{vis:"Privado"}:a==="ok"?{estado:"Confirmado"}:{estado:"Cancelado"};
@@ -512,6 +517,7 @@ clientes:{t:"Clientes y oportunidades",lab:"Nuevo cliente",k:"clients",f:[["nomb
 cotizaciones:{t:"Cotizaciones",lab:"Nueva cotización",k:"quotes",f:[["nro","Número"],["cliente","Cliente"],["monto","Monto S/","number"]],def:{estado:"Borrador"},num:["monto"],cols:["Número","Cliente","Monto","Estado"],row:function(q){return[E(q.nro),E(q.cliente),S(q.monto),bd(q.estado)]}},
 personal:{t:"Personal",lab:"Nuevo integrante",k:"staff",f:[["n","Nombre"],["rol","Rol o instrumento"]],def:{tar:0,arr:""},cols:["Nombre","Rol","Tarifa por evento"],row:function(s){return[E(s.n),E(s.rol),s.tar?S(s.tar):"Sin definir"]}},
 inventario:{t:"Inventario",lab:"Nuevo equipo",k:"inv",f:[["cod","Código"],["eq","Equipo"],["ub","Ubicación"]],def:{est:"Disponible"},cols:["Código","Equipo","Ubicación","Estado"],row:function(i){return[E(i.cod),E(i.eq),E(i.ub),bd(i.est)]}}};
+LIST["hoja-de-ruta"]={t:"Hoja de ruta",lab:"Nueva hoja de ruta",k:"hojas",f:[["evento","Evento"],["encuentro","Punto de encuentro"],["hora","Hora de encuentro","time"],["salida","Hora de salida","time"],["show","Inicio del show","time"],["notas","Observaciones","text","o"]],def:{},cols:["Evento","Encuentro","Hora","Salida","Show","Observaciones"],row:function(h){return[E(h.evento),E(h.encuentro),E(h.hora),E(h.salida),E(h.show),E(h.notas||"")]}};
 function money(){var c=sum(D.pays,"m",function(p){return p.f.slice(0,7)===MP}),e=sum(D.exps,"m",function(x){return x.f.slice(0,7)===MP});return{c:c,e:e,saldo:sum(D.contracts,"monto")-sum(D.pays,"m")}}
 function mm(t){var p=t.split(":");return +p[0]*60+ +p[1]}
 function cls(a){if(!a)return{c:"Sin registrar",d:"—"};var d=mm(a.arr||a)-mm(CONV);return{c:d<=tol?"Puntual":"Tardanza",d:Math.max(0,d)+" min"}}
@@ -524,37 +530,38 @@ return '<div class="tl"><b>Período: '+MP.split("-").reverse().join("/")+'</b><a
 '<div class="ag2"><div class="ac"><h3>Qué tengo que atender</h3>'+(D.contracts.filter(function(c){return c.firma!=="Firmado"}).slice(0,3).map(function(c){return"<p>• Contrato "+E(c.nro)+" pendiente de firma</p>"}).join(""))+"<p>• Consultas web recibidas: "+D.opps.length+"</p><p>• Saldo pendiente: "+S(m.saldo)+'</p></div><div class="ac"><h3>Puntualidad del equipo</h3><div class="k">'+(ver.length?Math.round(pu/ver.length*100)+"%":"Sin datos")+'</div><p class="kl">'+pu+" de "+ver.length+" presencias verificadas. Tolerancia "+tol+" min.</p></div></div>"+
 '<div class="tl"><a class="ab" href="#/admin/contratos/nuevo">Crear contrato</a><a class="ab" href="#/admin/finanzas">Registrar cobro</a><a class="ab" href="#/admin/asistencia">Tomar asistencia</a><a class="ab" href="#/admin/inventario">Preparar equipos</a></div>'};
 V.contratos=function(){return '<div class="tl"><input data-q placeholder="Buscar…" aria-label="Buscar"><a class="ab p" href="#/admin/contratos/nuevo">Crear contrato</a></div><div class="ac">'+tbl(["N°","Cliente","Evento","Monto","Firma","Cobro"],D.contracts.map(function(c){var p=paid(c.nro),s=c.monto-p;return[E(c.nro),E(c.cliente),E(c.evento),S(c.monto),bd(c.firma),c.monto?(s<=0?bd("Pagado"):bd("Saldo "+S(s))):"—"]}))+"</div><p class='kl'>Firma y cobro son estados independientes.</p>"};
-V.plantillas=function(){return '<div class="ac">'+tbl(["Plantilla","Versión","Estado"],[["Hoja DEMO","v1","Borrador"]])+'<p><a class="ab p" href="#/admin/contratos/nuevo" data-cal>Calibrar plantilla</a></p></div>'};
+V.plantillas=function(){return '<div class="ac">'+tbl(["Plantilla","Versión","Estado"],[["Plantilla de contrato","v1","Borrador"]])+'<p><a class="ab p" href="#/admin/contratos/nuevo" data-cal>Calibrar plantilla</a></p></div>'};
 V.finanzas=function(){var m=money(),t=["Cobros","Gastos","Pendientes"].map(function(x){return '<button class="ab'+(tab===x?" p":"")+'" data-tab="'+x+'">'+x+"</button>"}).join(" ");
 var b=tab==="Cobros"?tbl(["Contrato","Fecha","Importe","Método","Estado"],D.pays.map(function(p){return[E(p.c),fd(p.f),S(p.m),E(p.me),bd("Validado")]})):tab==="Gastos"?tbl(["Concepto","Fecha de pago","Categoría","Importe"],D.exps.map(function(x){return[E(x.c),fd(x.f),E(x.cat),S(x.m)]})):tbl(["Contrato","Monto","Cobrado","Saldo"],D.contracts.filter(function(c){return c.monto-paid(c.nro)>0}).map(function(c){return[E(c.nro),S(c.monto),S(paid(c.nro)),S(c.monto-paid(c.nro))]}));
 return '<div class="ag"><div class="ac"><div class="kl">Cobros netos del mes</div><div class="k">'+S(m.c)+'</div></div><div class="ac"><div class="kl">Egresos pagados</div><div class="k">'+S(m.e)+'</div></div><div class="ac"><div class="kl">Flujo neto (no es utilidad)</div><div class="k">'+S(m.c-m.e)+'</div></div></div><div class="tl">'+t+'<button class="ab p" data-new="pays">Registrar abono</button></div><div class="ac">'+b+"</div>"};
 V.asistencia=function(){return '<div class="ac"><h3>'+(API?"Asistencia":"Boda DEMO")+" — convocatoria "+CONV+" · tolerancia "+tol+' min</h3>'+tbl(["Persona","Llegada real","Clasificación","Demora total"],D.staff.map(function(s,i){var c=cls(s.arr);return[E(s.n),'<input type="time" data-arr="'+i+'" value="'+s.arr+'" aria-label="Llegada de '+E(s.n)+'" style="width:130px">',bd(c.c),c.d]}))+'<p class="kl">Sin registrar no es ausencia. Confirmar disponibilidad no marca presencia.</p></div>'};
 V["hoja-de-ruta"]=function(){if(API)return'<div class="ac">La hoja de ruta se conectará a los eventos reales en la próxima iteración.</div>';return '<div class="ac"><h3>Boda DEMO — versión 1</h3>'+tbl(["Momento","Hora"],[["Salida","15:30"],["Montaje","16:30"],["Prueba de sonido","17:30"],["Convocatoria",CONV],["Show","20:00 – 23:00"],["Retorno","23:30"]])+"</div><div class='ac'><h3>Confirmaciones</h3>"+tbl(["Persona","Leído","Confirmó"],[["Músico Ejemplo 1",bd("Leído"),bd("Confirmado")],["Músico Ejemplo 2",bd("Leído"),bd("Pendiente")],["Músico Ejemplo 3",bd("Sin leer"),bd("Pendiente")]])+"</div>"};
-V.contenido=function(){return '<div class="ac">'+tbl(["Elemento","Estado"],[["Titular de portada",bd("Publicado")],["Biografía de la orquesta",bd("Borrador")],["Teléfono 958 069 844",bd("Publicado")],["Redes sociales",bd("Sin configurar")],["Música y videos",bd("Sin archivos")]])+"<p class='kl'>La edición con borrador/vista previa llega en la siguiente iteración.</p></div>"};
-V.comunidad=function(){var f=ls("demo_fans")||[],t=ls("demo_testi")||[],v=ls("demo_votes");return '<div class="ac"><h3>Suscriptores</h3>'+tbl(["Nombre","Correo","WhatsApp"],f.map(function(x){return[E(x.nombre),x.cm?E(x.correo):"—",x.cw?E(x.wa):"—"]}))+'</div><div class="ac"><h3>Testimonios pendientes</h3>'+tbl(["Nombre","Texto","Estado"],t.map(function(x){return[E(x.nombre),E(x.texto.slice(0,60)),bd(x.estado)]}))+'</div><div class="ac"><h3>Votación (ejemplo)</h3><p>'+(v?v.n.join(" / ")+" votos":"Sin votos")+"</p></div>"};
+V.contenido=function(){var c=D.contenido||{};function inp(k,l){return"<label>"+l+'<input data-c="'+k+'" value="'+E(c[k]||"")+'"></label>'}
+return'<div class="ac"><h3>Contenido de la web</h3><label>Historia de la orquesta<textarea data-c="historia" rows="6" style="width:100%;font:inherit;border:1px solid #cdbf9f;border-radius:8px;padding:8px">'+E(c.historia||"")+"</textarea></label>"+inp("director","Texto del director")+inp("facebook","Facebook (https://…)")+inp("instagram","Instagram (https://…)")+inp("youtube","YouTube (https://…)")+inp("tiktok","TikTok (https://…)")+'<p><button class="ab p" data-csave>Publicar cambios</button></p><p class="kl">Los cambios aparecen en la web pública a los pocos segundos.</p></div>'};
+V.comunidad=function(){return '<div class="ac"><h3>Suscriptores</h3>'+tbl(["Nombre","Ciudad","Correo","WhatsApp"],D.subs.map(function(x){return[E(x.nombre),E(x.ciudad),x.cm?E(x.correo):"—",x.cw?E(x.wa):"—"]}))+'</div><div class="ac"><h3>Testimonios</h3>'+tbl(["Nombre","Texto","Estado","Acciones"],D.testi.map(function(x){return[E(x.nombre),E(String(x.texto||"").slice(0,80)),bd(x.estado),'<button class="ab" data-tm="'+x._id+'" data-a="aprobado">Aprobar</button> <button class="ab" data-tm="'+x._id+'" data-a="rechazado">Rechazar</button>']}))+"</div>"};
 V.reportes=function(){var r=function(p,l){var c=sum(D.pays,"m",function(x){return x.f.slice(0,7)===p}),e=sum(D.exps,"m",function(x){return x.f.slice(0,7)===p});return[l,S(c),S(e),S(c-e)]};return '<div class="ac">'+tbl(["Mes","Cobros netos","Egresos pagados","Flujo neto"],[r(MA,MA.split("-").reverse().join("/")),r(MP,MP.split("-").reverse().join("/"))])+(API?"":"<p class='kl'>Contrato DEMO de S/ 5 000: S/ 1 500 el mes anterior y S/ 3 500 este mes. El pago al músico (S/ 800) cuenta una sola vez.</p>")+"</div>"};
-V.usuarios=function(){return '<div class="ac">'+tbl(["Rol","Alcance"],[["Administrador","Todo"],["Coordinación","Calendario, contratos, asistencia"],["Finanzas","Cobros, gastos, reportes"],["Editor","Contenido y moderación"],["Músico/técnico","Solo sus asignaciones"]])+"<p class='kl'>Permisos reales requieren servidor. Aquí es solo ilustración.</p></div>"};
+V.usuarios=function(){var u=API&&API.me&&API.me();return'<div class="ac"><h3>Tu cuenta</h3><p>'+E(u?u.email:"")+'</p><p class="kl">UID: '+E(u?u.uid:"")+'</p></div><div class="ac"><h3>Agregar otro administrador</h3><p>1) Firebase > Authentication > Usuarios > Agregar usuario. 2) Firestore > colección admins > documento con ID igual al UID del usuario nuevo.</p><p class="kl">Todos los administradores tienen acceso completo. Los roles por módulo son una siguiente etapa.</p></div>'};
 V.configuracion=function(){return '<div class="ac"><h3>Módulos</h3>'+[["contratos","Contratos digitales"],["finanzas","Finanzas"],["inventario","Inventario"]].map(function(m){return '<label style="display:flex;gap:8px;align-items:center;font-size:15px;color:inherit"><input type="checkbox" style="width:auto" data-mod="'+m[0]+'"'+(D.mods[m[0]]?" checked":"")+"> "+m[1]+"</label>"}).join("")+"<p class='kl'>Desactivar oculta el menú y conserva los datos.</p></div>"};
 /* Editor de contratos */
-var CF={nombre:"Cliente Ejemplo S.A.C.",documento:"00000000",direccion:"Av. Ejemplo 123, Distrito Demo",fecha:dd(6),local:"Salón Demo",hora:"20:00",formato:"Show completo",importe:5000,adelanto:1500},BG=null,mode="fill",zoom=1,sel=0,prev=false;
+var CF={nombre:"",documento:"",direccion:"",fecha:"",local:"",hora:"",formato:"Show completo",importe:0,adelanto:0},BG=null,mode="fill",zoom=1,sel=0,prev=false;
 var FL=[["nombre",.14,.2,.72,.03,12],["documento",.14,.25,.4,.03,12],["direccion",.14,.3,.72,.06,12],["fecha",.14,.4,.3,.03,12],["local",.5,.4,.36,.03,12],["hora",.14,.45,.3,.03,12],["formato",.5,.45,.36,.03,12],["importe",.14,.52,.3,.03,12],["adelanto",.5,.52,.36,.03,12],["nombre",.14,.84,.5,.03,11]].map(function(a,i){return{key:a[0],x:a[1],y:a[2],w:a[3],h:a[4],size:a[5]}});
 function val(k){return k==="importe"||k==="adelanto"?S(CF[k]||0):k==="fecha"?fd(CF.fecha):CF[k]}
 function edit(){var inp=function(k,l,t){return '<label>'+l+'<input data-k="'+k+'" type="'+(t||"text")+'" value="'+E(CF[k])+'"></label>'};
 A.querySelector("#view").innerHTML='<div class="ed"><div class="ac"><h3>Cliente</h3>'+inp("nombre","Nombre")+inp("documento","Documento")+inp("direccion","Dirección")+"<h3 style='margin-top:14px'>Evento</h3>"+inp("fecha","Fecha","date")+inp("local","Local")+inp("hora","Hora","time")+"<h3 style='margin-top:14px'>Servicio y montos</h3><label>Formato<select data-k='formato'>"+["Equipo básico","Show completo","Formato personalizado"].map(function(o){return"<option"+(CF.formato===o?" selected":"")+">"+o+"</option>"}).join("")+"</select></label>"+inp("importe","Importe S/","number")+inp("adelanto","Adelanto pactado S/ (no es cobro recibido)","number")+'</div><div><div class="tl"><button class="ab'+(mode==="fill"?" p":"")+'" data-m="fill">Rellenar contrato</button><button class="ab'+(mode==="cal"?" p":"")+'" data-m="cal">Calibrar plantilla</button><button class="ab" data-z="-1" aria-label="Alejar">−</button><button class="ab" data-z="1" aria-label="Acercar">+</button><span class="kl" style="align-self:center">Página 1/1 · '+Math.round(zoom*100)+'%</span></div><div class="tl"><label class="ab" style="margin:0">Cambiar foto<input type="file" id="bgi" accept="image/png,image/jpeg" style="display:none"></label><button class="ab" data-pv>Vista previa</button><button class="ab p" data-save>Guardar borrador</button><button class="ab" data-tsave>Guardar plantilla</button><button class="ab" disabled title="Falta el motor de exportación PDF">Exportar PDF</button></div><p class="kl">Exportar PDF aún no está disponible: falta el motor de exportación (próxima iteración).</p><div id="warn" class="kl" style="color:#b35c00"></div><div class="vw"><div class="pg'+(mode==="cal"&&!prev?" cal":"")+'" id="pg" style="width:'+zoom*100+'%"></div></div><div id="props"></div></div></div>';paint()}
 function paint(){var pg=A.querySelector("#pg");if(!pg)return;pg.style.backgroundImage=BG?"url("+BG+")":"none";
-pg.innerHTML=(BG?"":'<div class="pt">CONTRATO DE EJEMPLO — DEMO<br><small>Hoja ilustrativa, sin cláusulas reales</small></div><div class="pt" style="top:92%;font-size:2.4cqw">Firma (vacía) · Firma (vacía)</div>')+FL.map(function(f,i){return '<div class="fl'+(mode==="cal"&&i===sel?" sel":"")+'" tabindex="0" data-i="'+i+'" style="left:'+f.x*100+"%;top:"+f.y*100+"%;width:"+f.w*100+"%;height:"+f.h*100+"%;font-size:calc("+f.size+" * 100cqw / 595)\">"+E(val(f.key))+"</div>"}).join("");
+pg.innerHTML=(BG?"":'<div class="pt">Sube la foto del contrato<br><small>Usa «Cambiar foto»</small></div><div class="pt" style="top:92%;font-size:2.4cqw">Firma · Firma</div>')+FL.map(function(f,i){return '<div class="fl'+(mode==="cal"&&i===sel?" sel":"")+'" tabindex="0" data-i="'+i+'" style="left:'+f.x*100+"%;top:"+f.y*100+"%;width:"+f.w*100+"%;height:"+f.h*100+"%;font-size:calc("+f.size+" * 100cqw / 595)\">"+E(val(f.key))+"</div>"}).join("");
 var o=0;[].forEach.call(pg.querySelectorAll(".fl"),function(el){if(el.scrollHeight>el.clientHeight+1||el.scrollWidth>el.clientWidth+1){el.classList.add("ov");o++}});
 var w=A.querySelector("#warn");if(w)w.textContent=o?"Aviso: "+o+" campo(s) desbordan su caja (borde naranja). Amplía la caja en Calibrar.":"";
 var pr=A.querySelector("#props"),f=FL[sel];pr.innerHTML=mode==="cal"&&f?'<div class="ac" style="margin-top:12px"><h3>Campo: '+f.key+'</h3><div class="ag" style="grid-template-columns:repeat(5,1fr)">'+["x","y","w","h","size"].map(function(k){return"<label>"+k+'<input data-p="'+k+'" type="number" step="'+(k==="size"?1:.001)+'" value="'+f[k]+'"></label>'}).join("")+'</div><button class="ab" data-dup>Duplicar campo</button> <span class="kl">Flechas del teclado: paso 0,001 (Mayús 0,01). Coordenadas normalizadas 0–1 sobre la página.</span></div>':""}
 /* Vistas */
 function shell(sub){var t=(NAV.filter(function(n){return n[0]===sub})[0]||[0,sub==="contratos/nuevo"?"Crear contrato":"Panel"])[1];
-A.innerHTML='<div class="ash"><aside id="sb"><b>Los Muñecos · Admin</b>'+NAV.filter(function(n){return !n[2]||D.mods[n[2]]}).map(function(n){return'<a href="#/admin/'+n[0]+'" class="'+(n[0]===sub||(sub==="contratos/nuevo"&&n[0]==="contratos")?"on":"")+'">'+n[1]+"</a>"}).join("")+'<div style="margin-top:16px;padding-top:12px;border-top:1px solid #5a1520"><a href="#/inicio">Ver sitio web</a><button class="so" data-out>Salir del modo administración</button></div></aside><div class="am"><header class="ah"><button class="ab" id="sbt" aria-label="Menú">☰</button><h2>'+t+'</h2><a class="ab" href="#/inicio">Ver sitio web</a><span class="bd">'+(API?"Firebase":"Jhon · DEMO")+'</span><button class="ab p" data-out>Salir</button></header><div class="av" id="view"></div></div></div>';
+A.innerHTML='<div class="ash"><aside id="sb"><b>Los Muñecos · Admin</b>'+NAV.filter(function(n){return !n[2]||D.mods[n[2]]}).map(function(n){return'<a href="#/admin/'+n[0]+'" class="'+(n[0]===sub||(sub==="contratos/nuevo"&&n[0]==="contratos")?"on":"")+'">'+n[1]+"</a>"}).join("")+'<div style="margin-top:16px;padding-top:12px;border-top:1px solid #5a1520"><a href="#/inicio">Ver sitio web</a><button class="so" data-out>Salir del modo administración</button></div></aside><div class="am"><header class="ah"><button class="ab" id="sbt" aria-label="Menú">☰</button><h2>'+t+'</h2><a class="ab" href="#/inicio">Ver sitio web</a><span class="bd">Administrador</span><button class="ab p" data-out>Salir</button></header><div class="av" id="view"></div></div></div>';
 var v=A.querySelector("#view"),mod=NAV.filter(function(n){return n[0]===sub})[0];
 if(mod&&mod[2]&&!D.mods[mod[2]]){v.innerHTML='<div class="ac">Módulo desactivado. Sus datos se conservan; actívalo en Configuración.</div>';return}
 if(sub==="contratos/nuevo"){edit();return}
 if(LIST[sub]){var L=LIST[sub],rows=D[L.k].concat(L.extra?L.extra():[]);v.innerHTML=tools(sub,L.lab)+'<div class="ac">'+tbl(L.cols,rows.map(L.row))+"</div>"+(L.note?"<p class='kl'>"+L.note+"</p>":"")}
 else if(V[sub])v.innerHTML=V[sub]();else v.innerHTML='<div class="ac">Pantalla no encontrada.</div>'}
-function login(){A.innerHTML='<div class="lg"><div><div><b>Los Muñecos de la Cumbia</b><p>Administración de la orquesta</p></div></div><div><form id="lf" novalidate><h2>Ingresar</h2><label for="le">Correo</label><input id="le" type="email" autocomplete="username"><label for="lp">Contraseña</label><input id="lp" type="password" autocomplete="current-password"><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="sh" style="width:auto"> Mostrar contraseña</label><p><button class="ab p" type="submit">Ingresar</button></p><div id="lm" role="status" class="kl"></div>'+(API?"":'<hr><button type="button" class="ab" data-demo>Explorar panel de demostración</button><p class="kl">Modo demostración: datos ficticios. No es autenticación segura; no ingreses datos reales.</p>')+'<a href="#/inicio" class="kl">Volver al sitio</a></form></div></div>'}
+function login(){A.innerHTML='<div class="lg"><div><div><b>Los Muñecos de la Cumbia</b><p>Administración de la orquesta</p></div></div><div><form id="lf" novalidate><h2>Ingresar</h2><label for="le">Correo</label><input id="le" type="email" autocomplete="username"><label for="lp">Contraseña</label><input id="lp" type="password" autocomplete="current-password"><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="sh" style="width:auto"> Mostrar contraseña</label><p><button class="ab p" type="submit">Ingresar</button></p><div id="lm" role="status" class="kl"></div><a href="#/inicio" class="kl">Volver al sitio</a></form></div></div>'}
 function render(){var h=location.hash;document.body.classList.toggle("adm",h.indexOf("#/admin")===0);if(h.indexOf("#/admin")!==0)return;var sub=h.slice(8)||"login";if(sub==="login"){login();return}if(!sess){location.hash="#/admin/login";return}shell(sub);scrollTo(0,0)}
 addEventListener("hashchange",render);render();
 window.fbReady.then(function(a){if(!a)return;API=a;Object.keys(COLL).forEach(function(k){D[k]=[]});
@@ -562,11 +569,15 @@ API.onAuth(function(u){if(!u){sess=false;stop();render();return}
 API.isAdmin(u).then(function(ok){if(!ok){API.signOut();sess=false;render();var m=A.querySelector("#lm");if(m)m.textContent="Esta cuenta no tiene permisos de administrador.";return}
 sess=true;start();var h=location.hash;if(h==="#/admin/login"||h==="#/admin")location.hash="#/admin/dashboard";else render()}).catch(function(e){API.signOut();sess=false;render();var m=A.querySelector("#lm");if(m)m.textContent="No se pudo verificar el acceso ("+(e.code||e.message)+")."})});render()});
 /* Eventos delegados */
-A.addEventListener("click",function(e){var t=e.target.closest("[data-demo],[data-out],[data-ev],[data-tsave],[data-new],[data-tab],[data-m],[data-z],[data-pv],[data-save],[data-dup],[data-cal],#sbt");if(!t)return;
+A.addEventListener("click",function(e){var t=e.target.closest("[data-demo],[data-out],[data-ev],[data-tm],[data-csave],[data-tsave],[data-new],[data-tab],[data-m],[data-z],[data-pv],[data-save],[data-dup],[data-cal],#sbt");if(!t)return;
 if(t.hasAttribute("data-demo")){if(API)return;sess=true;location.hash="#/admin/dashboard"}
 else if(t.hasAttribute("data-out")){sess=false;if(API)API.signOut();location.hash="#/inicio"}
 else if(t.id==="sbt")A.querySelector("#sb").classList.toggle("open");
 else if(t.dataset.tab){tab=t.dataset.tab;render()}
+else if(t.dataset.tm){if(API)API.upd("testimonios",t.dataset.tm,{estado:t.dataset.a}).then(function(){toast("Testimonio "+t.dataset.a)}).catch(function(er){toast("No se pudo guardar: "+(er.code||er.message))})}
+else if(t.hasAttribute("data-csave")){var o={},bad=0;["historia","director","facebook","instagram","youtube","tiktok"].forEach(function(k){o[k]=((D.contenido||{})[k]||"").trim();if(["facebook","instagram","youtube","tiktok"].indexOf(k)>-1&&o[k]&&!/^https:\/\/[^\s"'<>]+$/.test(o[k]))bad=k});
+if(bad){toast("El enlace de "+bad+" debe empezar con https://");return}
+API.set("config","contenido",o).then(function(){toast("Contenido publicado")}).catch(function(er){toast("No se pudo guardar: "+(er.code||er.message))})}
 else if(t.dataset.ev){evAct(t.dataset.ev,t.dataset.a)}else if(t.hasAttribute("data-tsave")){if(!API){toast("Disponible al conectar Firebase");return}API.set("config","plantilla",{fl:JSON.stringify(FL)}).then(function(){toast("Plantilla guardada en Firebase")}).catch(function(er){toast("No se pudo guardar: "+(er.code||er.message))})}else if(t.dataset.new)openNew(t.dataset.new);
 else if(t.dataset.m){mode=t.dataset.m;edit()}
 else if(t.dataset.z){zoom=Math.min(2,Math.max(.5,zoom+.25*t.dataset.z));edit()}
@@ -582,7 +593,8 @@ A.addEventListener("input",function(e){var t=e.target;
 if(t.dataset.q!==undefined){var q=t.value.toLowerCase();[].forEach.call(A.querySelectorAll("tbody tr"),function(r){r.style.display=r.textContent.toLowerCase().indexOf(q)<0?"none":""})}
 else if(t.dataset.k){CF[t.dataset.k]=t.value;paint()}
 else if(t.dataset.p&&FL[sel]){FL[sel][t.dataset.p]=+t.value;paint()}
-else if(t.dataset.arr!==undefined){D.staff[t.dataset.arr].arr=t.value}});
+else if(t.dataset.arr!==undefined){D.staff[t.dataset.arr].arr=t.value}
+else if(t.dataset.c){if(!D.contenido)D.contenido={};D.contenido[t.dataset.c]=t.value}});
 A.addEventListener("change",function(e){var t=e.target;
 if(t.id==="sh")A.querySelector("#lp").type=t.checked?"text":"password";
 else if(t.dataset.mod){D.mods[t.dataset.mod]=t.checked?1:0;if(API)API.set("config","modulos",D.mods);toast("Módulo "+(t.checked?"activado":"desactivado")+": se conservan los datos")}
@@ -598,7 +610,7 @@ A.addEventListener("keydown",function(e){var el=e.target.closest&&e.target.close
 function openNew(key){var c=key==="pays"?{t:"Registrar abono",f:[["c","Contrato (ej. C-002)"],["m","Importe S/","number"],["me","Método (Efectivo, Yape, Plin…)"]]}:{t:LIST[key].lab,f:LIST[key].f};
 dlg.innerHTML='<form method="dialog" novalidate id="nf"><h3>'+c.t+"</h3>"+c.f.map(function(f){return'<label>'+f[1]+'<input name="'+f[0]+'" type="'+(f[2]||"text")+'"></label>'}).join("")+'<div class="er" id="ne" style="color:#b00020;min-height:1.2em"></div><button class="ab p" type="submit">Guardar</button> <button class="ab" type="button" id="nc">Cancelar</button></form>';dlg.showModal();
 dlg.querySelector("#nc").onclick=function(){dlg.close()};
-dlg.querySelector("#nf").onsubmit=function(ev){ev.preventDefault();var o={},bad="";c.f.forEach(function(f){o[f[0]]=ev.target.elements[f[0]].value.trim();if(!o[f[0]])bad="Completa todos los campos."});
+dlg.querySelector("#nf").onsubmit=function(ev){ev.preventDefault();var o={},bad="";c.f.forEach(function(f){o[f[0]]=ev.target.elements[f[0]].value.trim();if(!o[f[0]]&&f[3]!=="o")bad="Completa los campos obligatorios."});
 if(bad){dlg.querySelector("#ne").textContent=bad;return}
 if(key==="pays"){o.m=+o.m;if(!(o.m>0)){dlg.querySelector("#ne").textContent="El importe debe ser mayor que cero.";return}if(!D.contracts.some(function(x){return x.nro===o.c})){dlg.querySelector("#ne").textContent="Ese contrato no existe.";return}o.f=today;put("pays",o)}
 else{var L=LIST[key];(L.num||[]).forEach(function(k){o[k]=+o[k]||0});put(L.k,Object.assign({},L.def,o))}
@@ -623,6 +635,8 @@ else try{
     set:(col,id,d)=>F.setDoc(F.doc(db,col,id),d,{merge:true}),
     upd:(col,id,d)=>F.updateDoc(F.doc(db,col,id),d),
     pubEvents:(cb,er)=>F.onSnapshot(F.query(F.collection(db,"eventos"),F.where("vis","==","Público")),s=>cb(s.docs.map(d=>({...d.data(),_id:d.id}))),er),
+    me:()=>auth.currentUser,
+    pubDoc:(col,id,cb)=>F.onSnapshot(F.doc(db,col,id),s=>cb(s.exists()?s.data():null),()=>{}),
     listen:(col,cb,er)=>F.onSnapshot(F.collection(db,col),s=>cb(s.docs.map(d=>({...d.data(),_id:d.id}))),er)
   });
 }catch(e){console.error("Firebase no pudo iniciar",e);window.__fbRes(null)}

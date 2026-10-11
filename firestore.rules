@@ -23,6 +23,26 @@ service cloud.firestore {
     match /eventos/{id} {
       allow get, list: if resource.data.vis == 'Público';
     }
+    // Contenido público editable desde el panel.
+    match /config/{id} {
+      allow get: if id == 'contenido';
+    }
+    match /suscriptores/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['nombre','ciudad','correo','wa','cm','cw','creado'])
+        && request.resource.data.nombre is string && request.resource.data.nombre.size() <= 120
+        && request.resource.data.ciudad is string && request.resource.data.ciudad.size() <= 120
+        && request.resource.data.correo is string && request.resource.data.correo.size() <= 200
+        && request.resource.data.wa is string && request.resource.data.wa.size() <= 30
+        && (request.resource.data.cm != null || request.resource.data.cw != null)
+        && request.resource.data.creado == request.time;
+    }
+    match /testimonios/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['nombre','texto','estado','creado'])
+        && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 80
+        && request.resource.data.texto is string && request.resource.data.texto.size() >= 20 && request.resource.data.texto.size() <= 1000
+        && request.resource.data.estado == 'pendiente'
+        && request.resource.data.creado == request.time;
+    }
     match /admins/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
       allow write: if false;

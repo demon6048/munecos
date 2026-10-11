@@ -1,6 +1,6 @@
 # Los Muñecos de la Cumbia — Web y panel
 
-- `public/index.html`: sitio público y panel (`#/admin/login`).
+- `public/index.html`: sitio público y panel (`#/admin/login`, acceso con Firebase Authentication).
 - `public/firebase-config.js`: configuración de la app web de Firebase (proyecto `munecoscumbia`).
 - `firestore.rules`: el público solo crea cotizaciones; todo lo demás exige administrador.
 
