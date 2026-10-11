@@ -586,7 +586,7 @@ else if(t.hasAttribute("data-save")){put("contracts",{nro:"BR-"+(D.contracts.len
 else if(t.hasAttribute("data-dup")){var f=FL[sel];FL.push(Object.assign({},f,{y:Math.min(.95,f.y+.04)}));sel=FL.length-1;paint()}
 else if(t.hasAttribute("data-cal"))mode="cal"});
 A.addEventListener("submit",function(e){if(e.target.id!=="lf")return;e.preventDefault();var m=A.querySelector("#lm");
-if(!API){m.textContent="Firebase no está disponible. Usa el modo demostración.";return}
+if(!API){m.textContent=location.protocol==="file:"?"Abre la página con Live Server o desde la dirección publicada (https://munecoscumbia.web.app), no con doble clic.":"No se pudo conectar con Firebase ("+(window.__fbErr||"sin detalle")+"). Revisa tu conexión y que hayas publicado con firebase deploy.";return}
 var em=A.querySelector("#le").value.trim(),pw=A.querySelector("#lp").value;if(!em||!pw){m.textContent="Escribe correo y contraseña.";return}
 m.textContent="Ingresando…";API.signIn(em,pw).catch(function(er){m.textContent="No se pudo ingresar ("+(er.code||er.message)+")"})});
 A.addEventListener("input",function(e){var t=e.target;
@@ -620,7 +620,7 @@ ev.target.querySelector("[type=submit]").disabled=true;dlg.close();toast(API?"En
 <script src="firebase-config.js"></script>
 <script type="module">
 const c=window.FIREBASE_CONFIG;
-if(!(c&&c.apiKey)){window.__fbRes(null)}
+if(!(c&&c.apiKey)){window.__fbErr="firebase-config.js no tiene la configuración";window.__fbRes(null)}
 else try{
   const B="https://www.gstatic.com/firebasejs/10.12.2/";
   const [{initializeApp},A,F]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-auth.js"),import(B+"firebase-firestore.js")]);
@@ -639,7 +639,7 @@ else try{
     pubDoc:(col,id,cb)=>F.onSnapshot(F.doc(db,col,id),s=>cb(s.exists()?s.data():null),()=>{}),
     listen:(col,cb,er)=>F.onSnapshot(F.collection(db,col),s=>cb(s.docs.map(d=>({...d.data(),_id:d.id}))),er)
   });
-}catch(e){console.error("Firebase no pudo iniciar",e);window.__fbRes(null)}
+}catch(e){console.error("Firebase no pudo iniciar",e);window.__fbErr=(e.code||e.message||String(e));window.__fbRes(null)}
 </script>
 </body>
 </html>
