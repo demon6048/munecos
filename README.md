@@ -13,3 +13,6 @@
 1. Firebase > Authentication > Método de acceso > activar Correo/contraseña.
 2. Authentication > Usuarios > Agregar usuario.
 3. Firestore > crear la colección `admins` con un documento cuyo ID sea el UID de ese usuario.
+
+## Versión
+El número de versión se cambia en `public/version.js` y aparece abajo a la izquierda en todas las páginas.

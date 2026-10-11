@@ -462,6 +462,9 @@ window.fbReady.then(function(api){if(!api)return;api.pubDoc("config","contenido"
 var b=document.getElementById("bioBox");if(b&&(c.historia||c.director))b.innerHTML="<h3>Historia de la orquesta</h3>"+(c.historia?"<p>"+esc(c.historia).replace(/\n/g,"<br>")+"</p>":"")+(c.director?"<h3>Dirección</h3><p>"+esc(c.director)+"</p>":"");
 var r=document.getElementById("redesBox"),L=[["facebook","Facebook"],["instagram","Instagram"],["youtube","YouTube"],["tiktok","TikTok"]].filter(function(x){return U.test(c[x[0]]||"")});
 if(r&&L.length)r.innerHTML=L.map(function(x){return'<a href="'+esc(c[x[0]])+'" target="_blank" rel="noopener">'+x[1]+"</a>"}).join("<br>")})})})();</script>
+<script>(function(){var b=document.createElement("div");b.id="vb";b.style.cssText="position:fixed;left:10px;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:60;font:12px/1.2 system-ui,sans-serif;color:#fff;background:rgba(0,0,0,.6);padding:4px 8px;border-radius:6px;pointer-events:none";
+var v="v"+(window.APP_VERSION||"?")+(window.APP_DATE?" · "+window.APP_DATE:"");b.textContent=v+" · conectando…";document.body.appendChild(b);
+window.fbReady.then(function(api){b.textContent=v+" · Firebase "+(api?"conectado":"sin conexión")})})();</script>
 <div id="admin" aria-live="polite"></div>
 <dialog id="dlg"></dialog>
 <script>
@@ -617,6 +620,7 @@ else{var L=LIST[key];(L.num||[]).forEach(function(k){o[k]=+o[k]||0});put(L.k,Obj
 ev.target.querySelector("[type=submit]").disabled=true;dlg.close();toast(API?"Enviando a Firebase…":"Registro guardado en la demostración");render()}}
 })();
 </script>
+<script src="version.js"></script>
 <script src="firebase-config.js"></script>
 <script type="module">
 const c=window.FIREBASE_CONFIG;
