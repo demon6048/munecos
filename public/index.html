@@ -170,6 +170,7 @@ nav a:hover::after,nav a[aria-current=page]::after{transform:scaleX(1)}
 </head>
 <body>
 <script>window.fbReady=new Promise(function(r){window.__fbRes=r})</script>
+<div id="fbbar" style="background:#1b1b1b;color:#fff;font:13px/1.3 system-ui,sans-serif;padding:6px 12px;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;position:relative;z-index:70"><span id="fbv"></span><button id="fbb" type="button" style="border:0;border-radius:99px;color:#fff;background:#666;padding:4px 12px;font:inherit;cursor:pointer" title="Probar la conexión con Firebase">● Conectando…</button><span id="fbd" role="status"></span></div>
 <header><div class="wrap bar">
 <a class="brand" href="#/inicio" aria-label="Los Muñecos de la Cumbia — Inicio" style="display:flex;align-items:center"><img id="hl" alt="" width="76" height="76" style="width:76px;height:76px;object-fit:contain"></a>
 <button id="mb" aria-expanded="false" aria-controls="menu">Menú</button>
@@ -462,9 +463,14 @@ window.fbReady.then(function(api){if(!api)return;api.pubDoc("config","contenido"
 var b=document.getElementById("bioBox");if(b&&(c.historia||c.director))b.innerHTML="<h3>Historia de la orquesta</h3>"+(c.historia?"<p>"+esc(c.historia).replace(/\n/g,"<br>")+"</p>":"")+(c.director?"<h3>Dirección</h3><p>"+esc(c.director)+"</p>":"");
 var r=document.getElementById("redesBox"),L=[["facebook","Facebook"],["instagram","Instagram"],["youtube","YouTube"],["tiktok","TikTok"]].filter(function(x){return U.test(c[x[0]]||"")});
 if(r&&L.length)r.innerHTML=L.map(function(x){return'<a href="'+esc(c[x[0]])+'" target="_blank" rel="noopener">'+x[1]+"</a>"}).join("<br>")})})})();</script>
-<script>(function(){var b=document.createElement("div");b.id="vb";b.style.cssText="position:fixed;left:10px;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:60;font:12px/1.2 system-ui,sans-serif;color:#fff;background:rgba(0,0,0,.6);padding:4px 8px;border-radius:6px;pointer-events:none";
-var v="v"+(window.APP_VERSION||"?")+(window.APP_DATE?" · "+window.APP_DATE:"");b.textContent=v+" · conectando…";document.body.appendChild(b);
-window.fbReady.then(function(api){b.textContent=v+" · Firebase "+(api?"conectado":"sin conexión")})})();</script>
+<script>(function(){var btn=document.getElementById("fbb"),d=document.getElementById("fbd"),vv=document.getElementById("fbv");
+vv.textContent="v"+(window.APP_VERSION||"?")+(window.APP_DATE?" · "+window.APP_DATE:"");
+function set(t,c){btn.textContent="● "+t;btn.style.background=c}
+function test(){set("Probando conexión…","#666");d.textContent="";
+window.fbReady.then(function(api){if(!api){set("Firebase sin conexión","#b00020");d.textContent=location.protocol==="file:"?"Abriste el archivo con doble clic: usa Live Server o https://munecoscumbia.web.app":(window.__fbErr||"sin detalle");return}
+return api.ping().then(function(){var u=api.me();set("Firebase conectado","#1a7f37");d.textContent=(window.FIREBASE_CONFIG.projectId||"")+(u?" · sesión: "+u.email:" · sin sesión de administrador")}).catch(function(e){if(e&&e.code==="permission-denied"){set("Conectado, faltan publicar las reglas","#b36b00");d.textContent="Ejecuta: firebase deploy --only hosting,firestore:rules"}else{set("Firebase sin respuesta","#b00020");d.textContent=(e&&(e.code||e.message))||"error de red"}})})}
+btn.onclick=test;
+window.fbReady.then(function(api){if(api)api.onAuth(test);else test()});})();</script>
 <div id="admin" aria-live="polite"></div>
 <dialog id="dlg"></dialog>
 <script>
@@ -639,6 +645,7 @@ else try{
     set:(col,id,d)=>F.setDoc(F.doc(db,col,id),d,{merge:true}),
     upd:(col,id,d)=>F.updateDoc(F.doc(db,col,id),d),
     pubEvents:(cb,er)=>F.onSnapshot(F.query(F.collection(db,"eventos"),F.where("vis","==","Público")),s=>cb(s.docs.map(d=>({...d.data(),_id:d.id}))),er),
+    ping:()=>F.getDoc(F.doc(db,"config","contenido")),
     me:()=>auth.currentUser,
     pubDoc:(col,id,cb)=>F.onSnapshot(F.doc(db,col,id),s=>cb(s.exists()?s.data():null),()=>{}),
     listen:(col,cb,er)=>F.onSnapshot(F.collection(db,col),s=>cb(s.docs.map(d=>({...d.data(),_id:d.id}))),er)
