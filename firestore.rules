@@ -1,0 +1,26 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    // Cotizaciones del formulario público: el público solo puede CREAR (con validación); solo administración lee.
+    match /oportunidades/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['nombre','tel','correo','tipo','fecha','hora','ciudad','local','asist','formato','msg','creado','estado'])
+        && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 120
+        && request.resource.data.tel is string && request.resource.data.tel.size() > 0 && request.resource.data.tel.size() <= 20
+        && request.resource.data.tipo is string && request.resource.data.tipo.size() <= 40
+        && request.resource.data.ciudad is string && request.resource.data.ciudad.size() <= 120
+        && request.resource.data.msg is string && request.resource.data.msg.size() <= 1000
+        && request.resource.data.estado == 'nueva'
+        && request.resource.data.creado == request.time;
+      allow read, update, delete: if isAdmin();
+    }
+    // Lista de administradores: se crea a mano desde la consola; nadie escribe desde la web.
+    match /admins/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}
