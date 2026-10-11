@@ -1,10 +1,10 @@
-// Pega aquí la configuración de tu app web de Firebase
-// (Consola de Firebase > Configuración del proyecto > Tus apps > App web > Configuración del SDK).
-// Estos valores NO son secretos; la seguridad la dan las reglas de firestore.rules.
-window.FIREBASE_CONFIG = null;
-/* Ejemplo:
+// Configuración de la app web de Firebase (proyecto munecoscumbia).
+// Estos valores no son secretos; la seguridad la dan las reglas de firestore.rules.
 window.FIREBASE_CONFIG = {
-  apiKey: "...", authDomain: "TU-PROYECTO.firebaseapp.com", projectId: "TU-PROYECTO",
-  storageBucket: "TU-PROYECTO.appspot.com", messagingSenderId: "...", appId: "..."
+  apiKey: "AIzaSyBUlAIwSeCErrYeAOadtDyxvDmKOH6-Egw",
+  authDomain: "munecoscumbia.firebaseapp.com",
+  projectId: "munecoscumbia",
+  storageBucket: "munecoscumbia.firebasestorage.app",
+  messagingSenderId: "456496763432",
+  appId: "1:456496763432:web:9f972a9891d7d2aff29b1d"
 };
-*/

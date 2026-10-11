@@ -169,6 +169,7 @@ nav a:hover::after,nav a[aria-current=page]::after{transform:scaleX(1)}
 </style>
 </head>
 <body>
+<script>window.fbReady=new Promise(function(r){window.__fbRes=r})</script>
 <div class="demo">Modo demostración: los datos que envíes se guardan solo en este navegador y no llegan a nadie.</div>
 <header><div class="wrap bar">
 <a class="brand" href="#/inicio" aria-label="Los Muñecos de la Cumbia — Inicio" style="display:flex;align-items:center"><img id="hl" alt="" width="76" height="76" style="width:76px;height:76px;object-fit:contain"></a>
@@ -349,9 +350,12 @@ if(!o.ciudad)E("ciudad","Indica ciudad o distrito.");
 if(bad){var f=$('[aria-invalid="true"]',q);if(f)f.focus();show($("#qMsg"),"Revisa los campos marcados.","bad");return}
 busy=true;$("#qBtn").disabled=true;$("#qBtn").textContent="Enviando…";
 var opp=st("demo_opps")||[],key=hash([o.nombre.toLowerCase(),o.tel.replace(/\D/g,""),o.tipo,o.fecha,o.ciudad.toLowerCase()]);
+var FBON=!!(window.FIREBASE_CONFIG&&window.FIREBASE_CONFIG.apiKey);
+function done(){busy=false;$("#qBtn").disabled=false;$("#qBtn").textContent="Enviar consulta"}
+if(FBON){window.fbReady.then(function(api){if(!api)throw{code:"sin-conexion"};return api.pub("oportunidades",key,o,"nueva")}).then(function(){show($("#qMsg"),"Consulta registrada en línea. Esto no confirma una reserva ni disponibilidad; te contactaremos.","ok");q.reset();updWa();done()}).catch(function(er){console.error(er);show($("#qMsg"),"No se pudo guardar en línea ("+(er&&er.code||"error")+"). Si ya enviaste esta misma consulta, ya está registrada. También puedes escribirnos por WhatsApp.","bad");done()});return}
 setTimeout(function(){
 if(opp.some(function(x){return x.key===key}))show($("#qMsg"),"Esta consulta ya estaba registrada (no se creó otra). Total de oportunidades en la demo: "+opp.length+".","ok");
-else{opp.push({key:key,etapa:"Nueva consulta",creada:new Date().toISOString(),datos:o});st("demo_opps",opp);setTimeout(function(){if(!window.fbSave)return;window.fbSave("oportunidades",key,o).then(function(){$("#qMsg").insertAdjacentHTML("beforeend",'<div class="msg ok">Guardada también en la base de datos en línea.</div>')}).catch(function(){$("#qMsg").insertAdjacentHTML("beforeend",'<div class="msg bad">No se pudo guardar en línea. Intenta de nuevo o escríbenos por WhatsApp.</div>')})},0);
+else{opp.push({key:key,etapa:"Nueva consulta",creada:new Date().toISOString(),datos:o});st("demo_opps",opp);
 show($("#qMsg"),"Consulta registrada (demo). Se creó 1 oportunidad en el CRM de demostración, etapa «Nueva consulta». Esto no confirma reserva ni disponibilidad. Total en demo: "+opp.length+".","ok")}
 busy=false;$("#qBtn").disabled=false;$("#qBtn").textContent="Enviar consulta"},600)});
 
@@ -447,6 +451,12 @@ ul.addEventListener("focusin",function(e){var a=e.target.closest("a");if(a)go(a.
 ul.addEventListener("mouseleave",rest);ul.addEventListener("focusout",rest);
 addEventListener("hashchange",function(){setTimeout(rest,60)});addEventListener("resize",rest);
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(rest);setTimeout(rest,150)})();</script>
+<script>(function(){var box=document.getElementById("agendaBox");if(!box||!window.fbReady)return;var h0=box.innerHTML,c0=box.className;
+function esc(s){var d=document.createElement("div");d.textContent=s==null?"":s;return d.innerHTML}
+window.fbReady.then(function(api){if(!api)return;api.pubEvents(function(l){var t=new Date().toISOString().slice(0,10),ok=["Confirmado","Reprogramado","Cancelado"];
+var up=l.filter(function(e){return e.fecha>=t&&ok.indexOf(e.estado)>-1}).sort(function(a,b){return a.fecha<b.fecha?-1:1});
+if(!up.length){box.className=c0;box.innerHTML=h0;return}box.className="";
+box.innerHTML='<div class="grid">'+up.map(function(e){return'<div class="card"><span class="tag">'+esc(e.estado)+'</span><h3>'+esc(e.titulo)+'</h3><p>'+e.fecha.split("-").reverse().join("/")+" · "+esc(e.ciudad)+"</p>"+(e.estado==="Cancelado"?"<p class='note'>Este evento fue cancelado.</p>":"")+"</div>"}).join("")+"</div>"},function(er){console.error(er)})})})();</script>
 <div id="admin" aria-live="polite"></div>
 <dialog id="dlg"></dialog>
 <script>
@@ -476,6 +486,18 @@ exps:[{f:iso(Y,Mo,1),c:"Pago músico (Boda DEMO)",cat:"Personal",m:800}],
 staff:[{n:"Músico Ejemplo 1",rol:"Voz",tar:300,arr:"18:12"},{n:"Músico Ejemplo 2",rol:"Percusión",tar:250,arr:"17:58"},{n:"Músico Ejemplo 3",rol:"Teclado",tar:250,arr:""}],
 inv:[{cod:"INS-001",eq:"Timbales (DEMO)",ub:"Almacén",est:"Disponible"},{cod:"SON-004",eq:"Micrófono inalámbrico (DEMO)",ub:"Evento Boda DEMO",est:"Reservado"},{cod:"SON-007",eq:"Consola de sonido (DEMO)",ub:"Taller",est:"Mantenimiento"}]};
 var sess=false,tol=5,CONV="18:00",tab="Cobros";
+var API=null,unsub=[],COLL={clients:"clientes",events:"eventos",quotes:"cotizaciones",contracts:"contratos",pays:"pagos",exps:"gastos",staff:"personal",inv:"inventario"};D.opps=[];
+function rerender(){if(location.hash.indexOf("#/admin")!==0||dlg.open||location.hash==="#/admin/contratos/nuevo")return;var ae=document.activeElement;if(ae&&ae.tagName==="INPUT"&&A.contains(ae))return;render()}
+function lerr(e){console.error(e);toast("Error al leer datos: "+(e.code||e.message))}
+function stop(){unsub.forEach(function(f){try{f()}catch(e){}});unsub=[]}
+function start(){stop();Object.keys(COLL).forEach(function(k){unsub.push(API.listen(COLL[k],function(l){D[k]=l;rerender()},lerr))});
+unsub.push(API.listen("oportunidades",function(l){D.opps=l;rerender()},lerr));
+unsub.push(API.listen("config",function(l){var pl=l.filter(function(x){return x._id==="plantilla"})[0];if(pl&&pl.fl){try{FL=JSON.parse(pl.fl)}catch(e){}}var m=l.filter(function(x){return x._id==="modulos"})[0];if(m){["finanzas","contratos","inventario"].forEach(function(k){if(m[k]!==undefined)D.mods[k]=m[k]});rerender()}},lerr))}
+function evAct(id,a){var ev=D.events.filter(function(x){return x._id===id})[0];if(!ev||!API)return;
+if(a==="pub"&&["Confirmado","Reprogramado","Cancelado"].indexOf(ev.estado)<0){toast("Confirma el evento antes de publicarlo");return}
+var d=a==="pub"?{vis:"Público"}:a==="hide"?{vis:"Privado"}:a==="ok"?{estado:"Confirmado"}:{estado:"Cancelado"};
+API.upd("eventos",id,d).then(function(){toast("Actualizado en Firebase")}).catch(function(er){toast("No se pudo guardar: "+(er.code||er.message))})}
+function put(k,o){if(!API){D[k].push(o);return}API.add(COLL[k],o).then(function(){toast("Guardado en Firebase")}).catch(function(e){toast("No se pudo guardar: "+(e.code||e.message))})}
 function ls(k){try{return JSON.parse(localStorage.getItem(k))||null}catch(e){return null}}
 function sum(a,k,f){return a.filter(f||function(){return 1}).reduce(function(t,x){return t+x[k]},0)}
 var paid=function(c){return sum(D.pays,"m",function(p){return p.c===c})};
@@ -485,8 +507,8 @@ function tbl(cols,rows){return '<div class="tw"><table><thead><tr>'+cols.map(fun
 var bd=function(t){return '<span class="bd">'+E(t)+"</span>"};
 function tools(key,label){return '<div class="tl"><input data-q placeholder="Buscar…" aria-label="Buscar">'+(label?'<button class="ab p" data-new="'+key+'">'+label+"</button>":"")+"</div>"}
 var LIST={
-eventos:{t:"Agenda y eventos",lab:"Nuevo evento",k:"events",f:[["titulo","Título"],["fecha","Fecha","date"],["ciudad","Ciudad"]],def:{estado:"Consulta",vis:"Privado"},cols:["Evento","Fecha","Ciudad","Estado","Visibilidad"],row:function(e){return[E(e.titulo),fd(e.fecha),E(e.ciudad),bd(e.estado),bd(e.vis)]},note:"Eventos privados por defecto: no aparecen en la agenda pública."},
-clientes:{t:"Clientes y oportunidades",lab:"Nuevo cliente",k:"clients",f:[["nombre","Nombre o razón social"],["ciudad","Ciudad"]],def:{tipo:"Persona",etapa:"Nueva consulta"},cols:["Cliente","Tipo","Ciudad","Etapa"],row:function(c){return[E(c.nombre),E(c.tipo),E(c.ciudad),bd(c.etapa)]},extra:function(){return(ls("demo_opps")||[]).map(function(o){return{nombre:o.datos.nombre,tipo:"Consulta web",ciudad:o.datos.ciudad,etapa:o.etapa}})},note:"Incluye las consultas enviadas desde el formulario público de este navegador."},
+eventos:{t:"Agenda y eventos",lab:"Nuevo evento",k:"events",f:[["titulo","Título"],["fecha","Fecha","date"],["ciudad","Ciudad"]],def:{estado:"Consulta",vis:"Privado"},cols:["Evento","Fecha","Ciudad","Estado","Visibilidad","Acciones"],row:function(e){var p=e.vis==="Público";return[E(e.titulo),fd(e.fecha),E(e.ciudad),bd(e.estado),bd(e.vis),e._id?'<button class="ab" data-ev="'+e._id+'" data-a="'+(p?"hide":"pub")+'">'+(p?"Despublicar":"Publicar")+'</button> <button class="ab" data-ev="'+e._id+'" data-a="ok">Confirmar</button> <button class="ab" data-ev="'+e._id+'" data-a="no">Cancelar</button>':"—"]},note:"Eventos privados por defecto: no aparecen en la agenda pública."},
+clientes:{t:"Clientes y oportunidades",lab:"Nuevo cliente",k:"clients",f:[["nombre","Nombre o razón social"],["ciudad","Ciudad"]],def:{tipo:"Persona",etapa:"Nueva consulta"},cols:["Cliente","Tipo","Ciudad","Etapa"],row:function(c){return[E(c.nombre),E(c.tipo),E(c.ciudad),bd(c.etapa)]},extra:function(){if(API)return D.opps.map(function(o){return{nombre:o.nombre,tipo:"Consulta web ("+(o.tel||"")+")",ciudad:o.ciudad,etapa:"Nueva consulta"}});return(ls("demo_opps")||[]).map(function(o){return{nombre:o.datos.nombre,tipo:"Consulta web",ciudad:o.datos.ciudad,etapa:o.etapa}})},note:"Incluye las consultas enviadas desde el formulario público de este navegador."},
 cotizaciones:{t:"Cotizaciones",lab:"Nueva cotización",k:"quotes",f:[["nro","Número"],["cliente","Cliente"],["monto","Monto S/","number"]],def:{estado:"Borrador"},num:["monto"],cols:["Número","Cliente","Monto","Estado"],row:function(q){return[E(q.nro),E(q.cliente),S(q.monto),bd(q.estado)]}},
 personal:{t:"Personal",lab:"Nuevo integrante",k:"staff",f:[["n","Nombre"],["rol","Rol o instrumento"]],def:{tar:0,arr:""},cols:["Nombre","Rol","Tarifa por evento"],row:function(s){return[E(s.n),E(s.rol),s.tar?S(s.tar):"Sin definir"]}},
 inventario:{t:"Inventario",lab:"Nuevo equipo",k:"inv",f:[["cod","Código"],["eq","Equipo"],["ub","Ubicación"]],def:{est:"Disponible"},cols:["Código","Equipo","Ubicación","Estado"],row:function(i){return[E(i.cod),E(i.eq),E(i.ub),bd(i.est)]}}};
@@ -498,19 +520,19 @@ V.dashboard=function(){var m=money(),ev=D.events.filter(function(e){return e.fec
 var ver=D.staff.filter(function(s){return s.arr}),pu=ver.filter(function(s){return cls(s.arr).c==="Puntual"}).length,mx=Math.max(m.c,m.e,1);
 var kp=function(a,b,hr){return '<a class="ac" style="text-decoration:none;color:inherit" href="#/admin/'+hr+'"><div class="kl">'+a+'</div><div class="k">'+b+"</div></a>"};
 return '<div class="tl"><b>Período: '+MP.split("-").reverse().join("/")+'</b><a class="ab p" href="#/admin/eventos">Nuevo evento</a></div><div class="ag">'+kp("Cobrado este mes (neto)",S(m.c),"finanzas")+kp("Saldo por cobrar (hoy)",S(m.saldo),"finanzas")+kp("Eventos confirmados",D.events.filter(function(e){return e.estado==="Confirmado"}).length,"eventos")+kp("Contratos por firmar",pend,"contratos")+"</div>"+
-'<div class="ag2"><div class="ac"><h3>Cobros y egresos del mes (DEMO)</h3><div class="cb"><i style="height:'+m.c/mx*100+'%" title="Cobros"></i><i class="g" style="height:'+m.e/mx*100+'%" title="Egresos"></i></div><p class="kl">Rojo: cobros '+S(m.c)+" · Dorado: egresos "+S(m.e)+" · Flujo neto "+S(m.c-m.e)+" (no es utilidad)</p></div><div class='ac'><h3>Próximos eventos</h3>"+(ev.length?ev.map(function(e){return"<p>"+fd(e.fecha)+" — "+E(e.titulo)+" "+bd(e.estado)+"</p>"}).join(""):"Sin eventos próximos.")+"</div></div>"+
-'<div class="ag2"><div class="ac"><h3>Qué tengo que atender</h3><p>• Contrato '+D.contracts[1].nro+" pendiente de firma</p><p>• Músico Ejemplo 3 sin confirmar llegada</p><p>• Saldo pendiente: "+S(m.saldo)+'</p></div><div class="ac"><h3>Puntualidad del equipo</h3><div class="k">'+(ver.length?Math.round(pu/ver.length*100)+"%":"Sin datos")+'</div><p class="kl">'+pu+" de "+ver.length+" presencias verificadas. Tolerancia "+tol+" min.</p></div></div>"+
+'<div class="ag2"><div class="ac"><h3>Cobros y egresos del mes</h3><div class="cb"><i style="height:'+m.c/mx*100+'%" title="Cobros"></i><i class="g" style="height:'+m.e/mx*100+'%" title="Egresos"></i></div><p class="kl">Rojo: cobros '+S(m.c)+" · Dorado: egresos "+S(m.e)+" · Flujo neto "+S(m.c-m.e)+" (no es utilidad)</p></div><div class='ac'><h3>Próximos eventos</h3>"+(ev.length?ev.map(function(e){return"<p>"+fd(e.fecha)+" — "+E(e.titulo)+" "+bd(e.estado)+"</p>"}).join(""):"Sin eventos próximos.")+"</div></div>"+
+'<div class="ag2"><div class="ac"><h3>Qué tengo que atender</h3>'+(D.contracts.filter(function(c){return c.firma!=="Firmado"}).slice(0,3).map(function(c){return"<p>• Contrato "+E(c.nro)+" pendiente de firma</p>"}).join(""))+"<p>• Consultas web recibidas: "+D.opps.length+"</p><p>• Saldo pendiente: "+S(m.saldo)+'</p></div><div class="ac"><h3>Puntualidad del equipo</h3><div class="k">'+(ver.length?Math.round(pu/ver.length*100)+"%":"Sin datos")+'</div><p class="kl">'+pu+" de "+ver.length+" presencias verificadas. Tolerancia "+tol+" min.</p></div></div>"+
 '<div class="tl"><a class="ab" href="#/admin/contratos/nuevo">Crear contrato</a><a class="ab" href="#/admin/finanzas">Registrar cobro</a><a class="ab" href="#/admin/asistencia">Tomar asistencia</a><a class="ab" href="#/admin/inventario">Preparar equipos</a></div>'};
 V.contratos=function(){return '<div class="tl"><input data-q placeholder="Buscar…" aria-label="Buscar"><a class="ab p" href="#/admin/contratos/nuevo">Crear contrato</a></div><div class="ac">'+tbl(["N°","Cliente","Evento","Monto","Firma","Cobro"],D.contracts.map(function(c){var p=paid(c.nro),s=c.monto-p;return[E(c.nro),E(c.cliente),E(c.evento),S(c.monto),bd(c.firma),c.monto?(s<=0?bd("Pagado"):bd("Saldo "+S(s))):"—"]}))+"</div><p class='kl'>Firma y cobro son estados independientes.</p>"};
 V.plantillas=function(){return '<div class="ac">'+tbl(["Plantilla","Versión","Estado"],[["Hoja DEMO","v1","Borrador"]])+'<p><a class="ab p" href="#/admin/contratos/nuevo" data-cal>Calibrar plantilla</a></p></div>'};
 V.finanzas=function(){var m=money(),t=["Cobros","Gastos","Pendientes"].map(function(x){return '<button class="ab'+(tab===x?" p":"")+'" data-tab="'+x+'">'+x+"</button>"}).join(" ");
 var b=tab==="Cobros"?tbl(["Contrato","Fecha","Importe","Método","Estado"],D.pays.map(function(p){return[E(p.c),fd(p.f),S(p.m),E(p.me),bd("Validado")]})):tab==="Gastos"?tbl(["Concepto","Fecha de pago","Categoría","Importe"],D.exps.map(function(x){return[E(x.c),fd(x.f),E(x.cat),S(x.m)]})):tbl(["Contrato","Monto","Cobrado","Saldo"],D.contracts.filter(function(c){return c.monto-paid(c.nro)>0}).map(function(c){return[E(c.nro),S(c.monto),S(paid(c.nro)),S(c.monto-paid(c.nro))]}));
 return '<div class="ag"><div class="ac"><div class="kl">Cobros netos del mes</div><div class="k">'+S(m.c)+'</div></div><div class="ac"><div class="kl">Egresos pagados</div><div class="k">'+S(m.e)+'</div></div><div class="ac"><div class="kl">Flujo neto (no es utilidad)</div><div class="k">'+S(m.c-m.e)+'</div></div></div><div class="tl">'+t+'<button class="ab p" data-new="pays">Registrar abono</button></div><div class="ac">'+b+"</div>"};
-V.asistencia=function(){return '<div class="ac"><h3>Boda DEMO — convocatoria '+CONV+" · tolerancia "+tol+' min</h3>'+tbl(["Persona","Llegada real","Clasificación","Demora total"],D.staff.map(function(s,i){var c=cls(s.arr);return[E(s.n),'<input type="time" data-arr="'+i+'" value="'+s.arr+'" aria-label="Llegada de '+E(s.n)+'" style="width:130px">',bd(c.c),c.d]}))+'<p class="kl">Sin registrar no es ausencia. Confirmar disponibilidad no marca presencia.</p></div>'};
-V["hoja-de-ruta"]=function(){return '<div class="ac"><h3>Boda DEMO — versión 1</h3>'+tbl(["Momento","Hora"],[["Salida","15:30"],["Montaje","16:30"],["Prueba de sonido","17:30"],["Convocatoria",CONV],["Show","20:00 – 23:00"],["Retorno","23:30"]])+"</div><div class='ac'><h3>Confirmaciones</h3>"+tbl(["Persona","Leído","Confirmó"],[["Músico Ejemplo 1",bd("Leído"),bd("Confirmado")],["Músico Ejemplo 2",bd("Leído"),bd("Pendiente")],["Músico Ejemplo 3",bd("Sin leer"),bd("Pendiente")]])+"</div>"};
+V.asistencia=function(){return '<div class="ac"><h3>'+(API?"Asistencia":"Boda DEMO")+" — convocatoria "+CONV+" · tolerancia "+tol+' min</h3>'+tbl(["Persona","Llegada real","Clasificación","Demora total"],D.staff.map(function(s,i){var c=cls(s.arr);return[E(s.n),'<input type="time" data-arr="'+i+'" value="'+s.arr+'" aria-label="Llegada de '+E(s.n)+'" style="width:130px">',bd(c.c),c.d]}))+'<p class="kl">Sin registrar no es ausencia. Confirmar disponibilidad no marca presencia.</p></div>'};
+V["hoja-de-ruta"]=function(){if(API)return'<div class="ac">La hoja de ruta se conectará a los eventos reales en la próxima iteración.</div>';return '<div class="ac"><h3>Boda DEMO — versión 1</h3>'+tbl(["Momento","Hora"],[["Salida","15:30"],["Montaje","16:30"],["Prueba de sonido","17:30"],["Convocatoria",CONV],["Show","20:00 – 23:00"],["Retorno","23:30"]])+"</div><div class='ac'><h3>Confirmaciones</h3>"+tbl(["Persona","Leído","Confirmó"],[["Músico Ejemplo 1",bd("Leído"),bd("Confirmado")],["Músico Ejemplo 2",bd("Leído"),bd("Pendiente")],["Músico Ejemplo 3",bd("Sin leer"),bd("Pendiente")]])+"</div>"};
 V.contenido=function(){return '<div class="ac">'+tbl(["Elemento","Estado"],[["Titular de portada",bd("Publicado")],["Biografía de la orquesta",bd("Borrador")],["Teléfono 958 069 844",bd("Publicado")],["Redes sociales",bd("Sin configurar")],["Música y videos",bd("Sin archivos")]])+"<p class='kl'>La edición con borrador/vista previa llega en la siguiente iteración.</p></div>"};
 V.comunidad=function(){var f=ls("demo_fans")||[],t=ls("demo_testi")||[],v=ls("demo_votes");return '<div class="ac"><h3>Suscriptores</h3>'+tbl(["Nombre","Correo","WhatsApp"],f.map(function(x){return[E(x.nombre),x.cm?E(x.correo):"—",x.cw?E(x.wa):"—"]}))+'</div><div class="ac"><h3>Testimonios pendientes</h3>'+tbl(["Nombre","Texto","Estado"],t.map(function(x){return[E(x.nombre),E(x.texto.slice(0,60)),bd(x.estado)]}))+'</div><div class="ac"><h3>Votación (ejemplo)</h3><p>'+(v?v.n.join(" / ")+" votos":"Sin votos")+"</p></div>"};
-V.reportes=function(){var r=function(p,l){var c=sum(D.pays,"m",function(x){return x.f.slice(0,7)===p}),e=sum(D.exps,"m",function(x){return x.f.slice(0,7)===p});return[l,S(c),S(e),S(c-e)]};return '<div class="ac">'+tbl(["Mes","Cobros netos","Egresos pagados","Flujo neto"],[r(MA,MA.split("-").reverse().join("/")),r(MP,MP.split("-").reverse().join("/"))])+"<p class='kl'>Contrato DEMO de S/ 5 000: S/ 1 500 el mes anterior y S/ 3 500 este mes. El pago al músico (S/ 800) cuenta una sola vez.</p></div>"};
+V.reportes=function(){var r=function(p,l){var c=sum(D.pays,"m",function(x){return x.f.slice(0,7)===p}),e=sum(D.exps,"m",function(x){return x.f.slice(0,7)===p});return[l,S(c),S(e),S(c-e)]};return '<div class="ac">'+tbl(["Mes","Cobros netos","Egresos pagados","Flujo neto"],[r(MA,MA.split("-").reverse().join("/")),r(MP,MP.split("-").reverse().join("/"))])+(API?"":"<p class='kl'>Contrato DEMO de S/ 5 000: S/ 1 500 el mes anterior y S/ 3 500 este mes. El pago al músico (S/ 800) cuenta una sola vez.</p>")+"</div>"};
 V.usuarios=function(){return '<div class="ac">'+tbl(["Rol","Alcance"],[["Administrador","Todo"],["Coordinación","Calendario, contratos, asistencia"],["Finanzas","Cobros, gastos, reportes"],["Editor","Contenido y moderación"],["Músico/técnico","Solo sus asignaciones"]])+"<p class='kl'>Permisos reales requieren servidor. Aquí es solo ilustración.</p></div>"};
 V.configuracion=function(){return '<div class="ac"><h3>Módulos</h3>'+[["contratos","Contratos digitales"],["finanzas","Finanzas"],["inventario","Inventario"]].map(function(m){return '<label style="display:flex;gap:8px;align-items:center;font-size:15px;color:inherit"><input type="checkbox" style="width:auto" data-mod="'+m[0]+'"'+(D.mods[m[0]]?" checked":"")+"> "+m[1]+"</label>"}).join("")+"<p class='kl'>Desactivar oculta el menú y conserva los datos.</p></div>"};
 /* Editor de contratos */
@@ -518,7 +540,7 @@ var CF={nombre:"Cliente Ejemplo S.A.C.",documento:"00000000",direccion:"Av. Ejem
 var FL=[["nombre",.14,.2,.72,.03,12],["documento",.14,.25,.4,.03,12],["direccion",.14,.3,.72,.06,12],["fecha",.14,.4,.3,.03,12],["local",.5,.4,.36,.03,12],["hora",.14,.45,.3,.03,12],["formato",.5,.45,.36,.03,12],["importe",.14,.52,.3,.03,12],["adelanto",.5,.52,.36,.03,12],["nombre",.14,.84,.5,.03,11]].map(function(a,i){return{key:a[0],x:a[1],y:a[2],w:a[3],h:a[4],size:a[5]}});
 function val(k){return k==="importe"||k==="adelanto"?S(CF[k]||0):k==="fecha"?fd(CF.fecha):CF[k]}
 function edit(){var inp=function(k,l,t){return '<label>'+l+'<input data-k="'+k+'" type="'+(t||"text")+'" value="'+E(CF[k])+'"></label>'};
-A.querySelector("#view").innerHTML='<div class="ed"><div class="ac"><h3>Cliente</h3>'+inp("nombre","Nombre")+inp("documento","Documento")+inp("direccion","Dirección")+"<h3 style='margin-top:14px'>Evento</h3>"+inp("fecha","Fecha","date")+inp("local","Local")+inp("hora","Hora","time")+"<h3 style='margin-top:14px'>Servicio y montos</h3><label>Formato<select data-k='formato'>"+["Equipo básico","Show completo","Formato personalizado"].map(function(o){return"<option"+(CF.formato===o?" selected":"")+">"+o+"</option>"}).join("")+"</select></label>"+inp("importe","Importe S/","number")+inp("adelanto","Adelanto pactado S/ (no es cobro recibido)","number")+'</div><div><div class="tl"><button class="ab'+(mode==="fill"?" p":"")+'" data-m="fill">Rellenar contrato</button><button class="ab'+(mode==="cal"?" p":"")+'" data-m="cal">Calibrar plantilla</button><button class="ab" data-z="-1" aria-label="Alejar">−</button><button class="ab" data-z="1" aria-label="Acercar">+</button><span class="kl" style="align-self:center">Página 1/1 · '+Math.round(zoom*100)+'%</span></div><div class="tl"><label class="ab" style="margin:0">Cambiar foto<input type="file" id="bgi" accept="image/png,image/jpeg" style="display:none"></label><button class="ab" data-pv>Vista previa</button><button class="ab p" data-save>Guardar borrador</button><button class="ab" disabled title="Falta el motor de exportación PDF">Exportar PDF</button></div><p class="kl">Exportar PDF aún no está disponible: falta el motor de exportación (próxima iteración).</p><div id="warn" class="kl" style="color:#b35c00"></div><div class="vw"><div class="pg'+(mode==="cal"&&!prev?" cal":"")+'" id="pg" style="width:'+zoom*100+'%"></div></div><div id="props"></div></div></div>';paint()}
+A.querySelector("#view").innerHTML='<div class="ed"><div class="ac"><h3>Cliente</h3>'+inp("nombre","Nombre")+inp("documento","Documento")+inp("direccion","Dirección")+"<h3 style='margin-top:14px'>Evento</h3>"+inp("fecha","Fecha","date")+inp("local","Local")+inp("hora","Hora","time")+"<h3 style='margin-top:14px'>Servicio y montos</h3><label>Formato<select data-k='formato'>"+["Equipo básico","Show completo","Formato personalizado"].map(function(o){return"<option"+(CF.formato===o?" selected":"")+">"+o+"</option>"}).join("")+"</select></label>"+inp("importe","Importe S/","number")+inp("adelanto","Adelanto pactado S/ (no es cobro recibido)","number")+'</div><div><div class="tl"><button class="ab'+(mode==="fill"?" p":"")+'" data-m="fill">Rellenar contrato</button><button class="ab'+(mode==="cal"?" p":"")+'" data-m="cal">Calibrar plantilla</button><button class="ab" data-z="-1" aria-label="Alejar">−</button><button class="ab" data-z="1" aria-label="Acercar">+</button><span class="kl" style="align-self:center">Página 1/1 · '+Math.round(zoom*100)+'%</span></div><div class="tl"><label class="ab" style="margin:0">Cambiar foto<input type="file" id="bgi" accept="image/png,image/jpeg" style="display:none"></label><button class="ab" data-pv>Vista previa</button><button class="ab p" data-save>Guardar borrador</button><button class="ab" data-tsave>Guardar plantilla</button><button class="ab" disabled title="Falta el motor de exportación PDF">Exportar PDF</button></div><p class="kl">Exportar PDF aún no está disponible: falta el motor de exportación (próxima iteración).</p><div id="warn" class="kl" style="color:#b35c00"></div><div class="vw"><div class="pg'+(mode==="cal"&&!prev?" cal":"")+'" id="pg" style="width:'+zoom*100+'%"></div></div><div id="props"></div></div></div>';paint()}
 function paint(){var pg=A.querySelector("#pg");if(!pg)return;pg.style.backgroundImage=BG?"url("+BG+")":"none";
 pg.innerHTML=(BG?"":'<div class="pt">CONTRATO DE EJEMPLO — DEMO<br><small>Hoja ilustrativa, sin cláusulas reales</small></div><div class="pt" style="top:92%;font-size:2.4cqw">Firma (vacía) · Firma (vacía)</div>')+FL.map(function(f,i){return '<div class="fl'+(mode==="cal"&&i===sel?" sel":"")+'" tabindex="0" data-i="'+i+'" style="left:'+f.x*100+"%;top:"+f.y*100+"%;width:"+f.w*100+"%;height:"+f.h*100+"%;font-size:calc("+f.size+" * 100cqw / 595)\">"+E(val(f.key))+"</div>"}).join("");
 var o=0;[].forEach.call(pg.querySelectorAll(".fl"),function(el){if(el.scrollHeight>el.clientHeight+1||el.scrollWidth>el.clientWidth+1){el.classList.add("ov");o++}});
@@ -526,29 +548,36 @@ var w=A.querySelector("#warn");if(w)w.textContent=o?"Aviso: "+o+" campo(s) desbo
 var pr=A.querySelector("#props"),f=FL[sel];pr.innerHTML=mode==="cal"&&f?'<div class="ac" style="margin-top:12px"><h3>Campo: '+f.key+'</h3><div class="ag" style="grid-template-columns:repeat(5,1fr)">'+["x","y","w","h","size"].map(function(k){return"<label>"+k+'<input data-p="'+k+'" type="number" step="'+(k==="size"?1:.001)+'" value="'+f[k]+'"></label>'}).join("")+'</div><button class="ab" data-dup>Duplicar campo</button> <span class="kl">Flechas del teclado: paso 0,001 (Mayús 0,01). Coordenadas normalizadas 0–1 sobre la página.</span></div>':""}
 /* Vistas */
 function shell(sub){var t=(NAV.filter(function(n){return n[0]===sub})[0]||[0,sub==="contratos/nuevo"?"Crear contrato":"Panel"])[1];
-A.innerHTML='<div class="ash"><aside id="sb"><b>Los Muñecos · Admin</b>'+NAV.filter(function(n){return !n[2]||D.mods[n[2]]}).map(function(n){return'<a href="#/admin/'+n[0]+'" class="'+(n[0]===sub||(sub==="contratos/nuevo"&&n[0]==="contratos")?"on":"")+'">'+n[1]+"</a>"}).join("")+'<div style="margin-top:16px;padding-top:12px;border-top:1px solid #5a1520"><a href="#/inicio">Ver sitio web</a><button class="so" data-out>Salir del modo administración</button></div></aside><div class="am"><header class="ah"><button class="ab" id="sbt" aria-label="Menú">☰</button><h2>'+t+'</h2><a class="ab" href="#/inicio">Ver sitio web</a><span class="bd">Jhon · DEMO</span><button class="ab p" data-out>Salir</button></header><div class="av" id="view"></div></div></div>';
+A.innerHTML='<div class="ash"><aside id="sb"><b>Los Muñecos · Admin</b>'+NAV.filter(function(n){return !n[2]||D.mods[n[2]]}).map(function(n){return'<a href="#/admin/'+n[0]+'" class="'+(n[0]===sub||(sub==="contratos/nuevo"&&n[0]==="contratos")?"on":"")+'">'+n[1]+"</a>"}).join("")+'<div style="margin-top:16px;padding-top:12px;border-top:1px solid #5a1520"><a href="#/inicio">Ver sitio web</a><button class="so" data-out>Salir del modo administración</button></div></aside><div class="am"><header class="ah"><button class="ab" id="sbt" aria-label="Menú">☰</button><h2>'+t+'</h2><a class="ab" href="#/inicio">Ver sitio web</a><span class="bd">'+(API?"Firebase":"Jhon · DEMO")+'</span><button class="ab p" data-out>Salir</button></header><div class="av" id="view"></div></div></div>';
 var v=A.querySelector("#view"),mod=NAV.filter(function(n){return n[0]===sub})[0];
 if(mod&&mod[2]&&!D.mods[mod[2]]){v.innerHTML='<div class="ac">Módulo desactivado. Sus datos se conservan; actívalo en Configuración.</div>';return}
 if(sub==="contratos/nuevo"){edit();return}
 if(LIST[sub]){var L=LIST[sub],rows=D[L.k].concat(L.extra?L.extra():[]);v.innerHTML=tools(sub,L.lab)+'<div class="ac">'+tbl(L.cols,rows.map(L.row))+"</div>"+(L.note?"<p class='kl'>"+L.note+"</p>":"")}
 else if(V[sub])v.innerHTML=V[sub]();else v.innerHTML='<div class="ac">Pantalla no encontrada.</div>'}
-function login(){A.innerHTML='<div class="lg"><div><div><b>Los Muñecos de la Cumbia</b><p>Administración de la orquesta</p></div></div><div><form id="lf" novalidate><h2>Ingresar</h2><label for="le">Correo</label><input id="le" type="email" autocomplete="username"><label for="lp">Contraseña</label><input id="lp" type="password" autocomplete="current-password"><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="sh" style="width:auto"> Mostrar contraseña</label><p><button class="ab p" type="submit">Ingresar</button></p><div id="lm" role="status" class="kl"></div><hr><button type="button" class="ab" data-demo>Explorar panel de demostración</button><p class="kl">Modo demostración: datos ficticios. No es autenticación segura; no ingreses datos reales.</p><a href="#/inicio" class="kl">Volver al sitio</a></form></div></div>'}
+function login(){A.innerHTML='<div class="lg"><div><div><b>Los Muñecos de la Cumbia</b><p>Administración de la orquesta</p></div></div><div><form id="lf" novalidate><h2>Ingresar</h2><label for="le">Correo</label><input id="le" type="email" autocomplete="username"><label for="lp">Contraseña</label><input id="lp" type="password" autocomplete="current-password"><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="sh" style="width:auto"> Mostrar contraseña</label><p><button class="ab p" type="submit">Ingresar</button></p><div id="lm" role="status" class="kl"></div>'+(API?"":'<hr><button type="button" class="ab" data-demo>Explorar panel de demostración</button><p class="kl">Modo demostración: datos ficticios. No es autenticación segura; no ingreses datos reales.</p>')+'<a href="#/inicio" class="kl">Volver al sitio</a></form></div></div>'}
 function render(){var h=location.hash;document.body.classList.toggle("adm",h.indexOf("#/admin")===0);if(h.indexOf("#/admin")!==0)return;var sub=h.slice(8)||"login";if(sub==="login"){login();return}if(!sess){location.hash="#/admin/login";return}shell(sub);scrollTo(0,0)}
 addEventListener("hashchange",render);render();
+window.fbReady.then(function(a){if(!a)return;API=a;Object.keys(COLL).forEach(function(k){D[k]=[]});
+API.onAuth(function(u){if(!u){sess=false;stop();render();return}
+API.isAdmin(u).then(function(ok){if(!ok){API.signOut();sess=false;render();var m=A.querySelector("#lm");if(m)m.textContent="Esta cuenta no tiene permisos de administrador.";return}
+sess=true;start();var h=location.hash;if(h==="#/admin/login"||h==="#/admin")location.hash="#/admin/dashboard";else render()}).catch(function(e){API.signOut();sess=false;render();var m=A.querySelector("#lm");if(m)m.textContent="No se pudo verificar el acceso ("+(e.code||e.message)+")."})});render()});
 /* Eventos delegados */
-A.addEventListener("click",function(e){var t=e.target.closest("[data-demo],[data-out],[data-new],[data-tab],[data-m],[data-z],[data-pv],[data-save],[data-dup],[data-cal],#sbt");if(!t)return;
-if(t.hasAttribute("data-demo")){sess=true;location.hash="#/admin/dashboard"}
-else if(t.hasAttribute("data-out")){sess=false;location.hash="#/inicio"}
+A.addEventListener("click",function(e){var t=e.target.closest("[data-demo],[data-out],[data-ev],[data-tsave],[data-new],[data-tab],[data-m],[data-z],[data-pv],[data-save],[data-dup],[data-cal],#sbt");if(!t)return;
+if(t.hasAttribute("data-demo")){if(API)return;sess=true;location.hash="#/admin/dashboard"}
+else if(t.hasAttribute("data-out")){sess=false;if(API)API.signOut();location.hash="#/inicio"}
 else if(t.id==="sbt")A.querySelector("#sb").classList.toggle("open");
 else if(t.dataset.tab){tab=t.dataset.tab;render()}
-else if(t.dataset.new)openNew(t.dataset.new);
+else if(t.dataset.ev){evAct(t.dataset.ev,t.dataset.a)}else if(t.hasAttribute("data-tsave")){if(!API){toast("Disponible al conectar Firebase");return}API.set("config","plantilla",{fl:JSON.stringify(FL)}).then(function(){toast("Plantilla guardada en Firebase")}).catch(function(er){toast("No se pudo guardar: "+(er.code||er.message))})}else if(t.dataset.new)openNew(t.dataset.new);
 else if(t.dataset.m){mode=t.dataset.m;edit()}
 else if(t.dataset.z){zoom=Math.min(2,Math.max(.5,zoom+.25*t.dataset.z));edit()}
 else if(t.hasAttribute("data-pv")){prev=!prev;mode==="cal"&&edit();toast(prev?"Vista previa sin guías":"Guías visibles")}
-else if(t.hasAttribute("data-save")){D.contracts.push({nro:"BR-"+(D.contracts.length+1),cliente:CF.nombre,evento:"—",monto:+CF.importe||0,firma:"Borrador"});toast("Borrador guardado (solo en esta sesión de demostración)")}
+else if(t.hasAttribute("data-save")){put("contracts",{nro:"BR-"+(D.contracts.length+1),cliente:CF.nombre,evento:"—",monto:+CF.importe||0,firma:"Borrador",datos:JSON.stringify(CF)});if(!API)toast("Borrador guardado (solo en esta sesión de demostración)")}
 else if(t.hasAttribute("data-dup")){var f=FL[sel];FL.push(Object.assign({},f,{y:Math.min(.95,f.y+.04)}));sel=FL.length-1;paint()}
 else if(t.hasAttribute("data-cal"))mode="cal"});
-A.addEventListener("submit",function(e){if(e.target.id!=="lf")return;e.preventDefault();var m=A.querySelector("#lm");m.textContent="El acceso real no está disponible en esta versión: requiere autenticación en servidor. Usa el modo demostración."});
+A.addEventListener("submit",function(e){if(e.target.id!=="lf")return;e.preventDefault();var m=A.querySelector("#lm");
+if(!API){m.textContent="Firebase no está disponible. Usa el modo demostración.";return}
+var em=A.querySelector("#le").value.trim(),pw=A.querySelector("#lp").value;if(!em||!pw){m.textContent="Escribe correo y contraseña.";return}
+m.textContent="Ingresando…";API.signIn(em,pw).catch(function(er){m.textContent="No se pudo ingresar ("+(er.code||er.message)+")"})});
 A.addEventListener("input",function(e){var t=e.target;
 if(t.dataset.q!==undefined){var q=t.value.toLowerCase();[].forEach.call(A.querySelectorAll("tbody tr"),function(r){r.style.display=r.textContent.toLowerCase().indexOf(q)<0?"none":""})}
 else if(t.dataset.k){CF[t.dataset.k]=t.value;paint()}
@@ -556,8 +585,8 @@ else if(t.dataset.p&&FL[sel]){FL[sel][t.dataset.p]=+t.value;paint()}
 else if(t.dataset.arr!==undefined){D.staff[t.dataset.arr].arr=t.value}});
 A.addEventListener("change",function(e){var t=e.target;
 if(t.id==="sh")A.querySelector("#lp").type=t.checked?"text":"password";
-else if(t.dataset.mod){D.mods[t.dataset.mod]=t.checked?1:0;toast("Módulo "+(t.checked?"activado":"desactivado")+": se conservan los datos")}
-else if(t.dataset.arr!==undefined)render();
+else if(t.dataset.mod){D.mods[t.dataset.mod]=t.checked?1:0;if(API)API.set("config","modulos",D.mods);toast("Módulo "+(t.checked?"activado":"desactivado")+": se conservan los datos")}
+else if(t.dataset.arr!==undefined){var st0=D.staff[t.dataset.arr];if(API&&st0&&st0._id)API.upd("personal",st0._id,{arr:st0.arr}).catch(function(er){toast("No se pudo guardar: "+(er.code||er.message))});render()}
 else if(t.id==="bgi"){var f=t.files[0];if(!f)return;if(!/^image\/(png|jpeg)$/.test(f.type)||f.size>8*1048576){toast("Usa JPG o PNG de hasta 8 MB");return}var r=new FileReader();r.onload=function(){BG=r.result;paint()};r.readAsDataURL(f)}});
 /* Arrastre en calibración: coordenadas del puntero → página normalizada (independiente de zoom y scroll) */
 var dr=null;
@@ -571,20 +600,32 @@ dlg.innerHTML='<form method="dialog" novalidate id="nf"><h3>'+c.t+"</h3>"+c.f.ma
 dlg.querySelector("#nc").onclick=function(){dlg.close()};
 dlg.querySelector("#nf").onsubmit=function(ev){ev.preventDefault();var o={},bad="";c.f.forEach(function(f){o[f[0]]=ev.target.elements[f[0]].value.trim();if(!o[f[0]])bad="Completa todos los campos."});
 if(bad){dlg.querySelector("#ne").textContent=bad;return}
-if(key==="pays"){o.m=+o.m;if(!(o.m>0)){dlg.querySelector("#ne").textContent="El importe debe ser mayor que cero.";return}if(!D.contracts.some(function(x){return x.nro===o.c})){dlg.querySelector("#ne").textContent="Ese contrato no existe.";return}o.f=today;D.pays.push(o)}
-else{var L=LIST[key];(L.num||[]).forEach(function(k){o[k]=+o[k]||0});D[L.k].push(Object.assign({},L.def,o))}
-ev.target.querySelector("[type=submit]").disabled=true;dlg.close();toast("Registro guardado en la demostración");render()}}
+if(key==="pays"){o.m=+o.m;if(!(o.m>0)){dlg.querySelector("#ne").textContent="El importe debe ser mayor que cero.";return}if(!D.contracts.some(function(x){return x.nro===o.c})){dlg.querySelector("#ne").textContent="Ese contrato no existe.";return}o.f=today;put("pays",o)}
+else{var L=LIST[key];(L.num||[]).forEach(function(k){o[k]=+o[k]||0});put(L.k,Object.assign({},L.def,o))}
+ev.target.querySelector("[type=submit]").disabled=true;dlg.close();toast(API?"Enviando a Firebase…":"Registro guardado en la demostración");render()}}
 })();
 </script>
 <script src="firebase-config.js"></script>
 <script type="module">
 const c=window.FIREBASE_CONFIG;
-if(c&&c.apiKey){
-  const {initializeApp}=await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
-  const {getFirestore,doc,setDoc,serverTimestamp}=await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
-  const db=getFirestore(initializeApp(c));
-  window.fbSave=(col,id,data)=>setDoc(doc(db,col,id),{...data,creado:serverTimestamp(),estado:"nueva"});
-}
+if(!(c&&c.apiKey)){window.__fbRes(null)}
+else try{
+  const B="https://www.gstatic.com/firebasejs/10.12.2/";
+  const [{initializeApp},A,F]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-auth.js"),import(B+"firebase-firestore.js")]);
+  const app=initializeApp(c),auth=A.getAuth(app),db=F.getFirestore(app);
+  window.__fbRes({
+    pub:(col,id,data,estado)=>{const p={...data,creado:F.serverTimestamp()};if(estado)p.estado=estado;return id?F.setDoc(F.doc(db,col,id),p):F.addDoc(F.collection(db,col),p)},
+    signIn:(e,p)=>A.signInWithEmailAndPassword(auth,e,p),
+    signOut:()=>A.signOut(auth),
+    onAuth:cb=>A.onAuthStateChanged(auth,cb),
+    isAdmin:async u=>(await F.getDoc(F.doc(db,"admins",u.uid))).exists(),
+    add:(col,d)=>F.addDoc(F.collection(db,col),{...d,creado:F.serverTimestamp()}),
+    set:(col,id,d)=>F.setDoc(F.doc(db,col,id),d,{merge:true}),
+    upd:(col,id,d)=>F.updateDoc(F.doc(db,col,id),d),
+    pubEvents:(cb,er)=>F.onSnapshot(F.query(F.collection(db,"eventos"),F.where("vis","==","Público")),s=>cb(s.docs.map(d=>({...d.data(),_id:d.id}))),er),
+    listen:(col,cb,er)=>F.onSnapshot(F.collection(db,col),s=>cb(s.docs.map(d=>({...d.data(),_id:d.id}))),er)
+  });
+}catch(e){console.error("Firebase no pudo iniciar",e);window.__fbRes(null)}
 </script>
 </body>
 </html>
